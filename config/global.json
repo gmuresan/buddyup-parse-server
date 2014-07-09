@@ -1,0 +1,14 @@
+{
+    "applications": {
+        "BuddyUp": {
+            "applicationId": "aDavC8Nu9uAgALH5t81G4We7CHoW4Nx1b95Yce5t", 
+            "masterKey": "ITcsg8L9K3Pi4Oe0NlA7RZgvAVlZlPeETJt6dGpI"
+        }, 
+        "_default": {
+            "link": "BuddyUp"
+        }
+    }, 
+    "global": {
+        "parseVersion": "1.2.19"
+    }
+}
