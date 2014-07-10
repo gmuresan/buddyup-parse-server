@@ -118,6 +118,21 @@ Parse.Cloud.define("getNewData", function(request, response) {
 });
 
 
+Parse.Cloud.define("inviteToStatus", function(request, response) {
 
+});
 
+var twilio = require("twilio");
+twilio.initialize("AC817361952ac118a49a3ff58e1d54fbca","2a8e0b3f9fcd19598ed3814bd7db5dc9");
 
+Parse.Cloud.define("inviteWithTwilio", function(request, response) {
+  // Use the Twilio Cloud Module to send an SMS
+  twilio.sendSMS({
+    From: "myTwilioPhoneNumber",
+    To: request.params.number,
+    Body: "Start using Parse and Twilio!"
+  }, {
+    success: function(httpResponse) { response.success("SMS sent!"); },
+    error: function(httpResponse) { response.error("Uh oh, something went wrong"); }
+  });
+});
