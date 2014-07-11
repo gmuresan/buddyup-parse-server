@@ -190,6 +190,27 @@ Parse.Cloud.define("inviteWithTwilio", function(request, response) {
 
 Parse.Cloud.job("updateSuggestedFriends", function(request, status) {
   Parse.Cloud.useMasterKey();
-  query = new Parse.Query("FriendRelation");
+  var query = new Parse.Query("Status");
+  query.find({
+    success: function(statuses) {
+      // console.log(statuses);
+       for(var i = 0; i < statuses.length; i++) {
+         var attending = statuses[i].relation("usersAttending");
+         var friendQuery = new Parse.Query("FriendRelation").equalTo("toUser", statuses[i].get("user"));
 
+         var attendingPromise = attending.query().matchesKeyInQuery("objectId", "fromUser.objectId", friendQuery).find();
+         attendingPromise.then(function(attendingFriendUsers) {
+            console.log(attendingFriendUsers);
+         });
+       }
+      status.success("what the hell");
+    },
+    error: function(error) {
+
+    }
+  });
 });
+
+function handleUpdatingAttendingSuggestedFriends( attending){
+
+}
