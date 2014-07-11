@@ -74,6 +74,9 @@ Parse.Cloud.define("getNewData", function(request, response) {
   var newSince = new Date();
 
   var promises = []
+  var newChats;
+  var newNotifications;
+  var newMessages;
 
   // Get notifications
   var nullStatusQuery = new Parse.Query("Notification");
@@ -93,7 +96,7 @@ Parse.Cloud.define("getNewData", function(request, response) {
   } else {
     var fiveDaysAgo = new Date((new Date()).getTime() - 60 * 60 * 24 * 5 * 1000);
     var fiveDaysAgoQuery = new Parse.Query("Notification");
-    fiveDaysAgo.greaterThanOrEqualTo("createdAt", fiveDaysAgo);
+    fiveDaysAgoQuery.greaterThanOrEqualTo("createdAt", fiveDaysAgo);
     var notificationTypesNotAffectedByDate = ['requestAccepted', 'requestCanceled', 'requestSent', 'unfriended'];
     var notificationTypesQuery = new Parse.Query("Notification");
     notificationTypesQuery.containedIn("type", notificationTypesNotAffectedByDate);
@@ -109,11 +112,13 @@ Parse.Cloud.define("getNewData", function(request, response) {
     notificationQuery.matchesKeyInQuery("objectId", "objectId", notExpiredOrNull);
   }
 
-  notificationPromise = notificationQuery.find({
-    success: function(notifications) {
+  notificationPromise = notificationQuery.find().then(function(notifications) {
       console.log(notifications);
+      newNotifications = notifications;
+      return newNotifications;
     }
-  })
+  );
+  promises.push(notificationPromise);
 
   // Get chats and messages
   var chatsQuery = new Parse.Query("Chat");
@@ -127,7 +132,9 @@ Parse.Cloud.define("getNewData", function(request, response) {
   messagePromise = messageQuery.find();
   promises.push(messagePromise);
   messagePromise.then(function(messages) {
-      console.log(messages);
+      //console.log(messages);
+      newMessages = messages;
+
       chats = {}
       for(i=0; i<messages.length; i++) {
         chat = messages[i].get("chat");
@@ -142,7 +149,9 @@ Parse.Cloud.define("getNewData", function(request, response) {
       var chatQuery = new Parse.Query("Chat");
       chatQuery.containedIn("objectId", chatList).include("members");
 
-      return chatQuery.find();
+      chatPromise = chatQuery.find();
+      promises.push(chatPromise);
+      return chatPromise;
 
     },
 
@@ -151,14 +160,21 @@ Parse.Cloud.define("getNewData", function(request, response) {
     }
   ).then(function(chats) {
     console.log(chats);
+    newChats = chats;
+    return chats;
   });
 
-  console.log(chats);
-  console.log(messages);
-  console.log(notifications);
+  //console.log(newChats);
+  //console.log(newMessages);
+  //console.log(newNotifications);
 
-  promises = Parse.Promise.when(promises).then(function() {
-    response.success({"chats": chats, "messages": messages, "notifications": notifications})
+  //console.log(promises);
+
+  promises = Parse.Promise.when(promises).then(function(a, b, c) {
+    //console.log(a);
+    //console.log(b);
+    //console.log(c);
+    response.success({"chats": newChats, "messages": newMessages, "notifications": newNotifications})
   })
 
 });
