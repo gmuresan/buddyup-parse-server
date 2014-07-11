@@ -171,18 +171,25 @@ twilio.initialize("AC817361952ac118a49a3ff58e1d54fbca","2a8e0b3f9fcd19598ed3814b
 Parse.Cloud.define("inviteWithTwilio", function(request, response) {
   // Use the Twilio Cloud Module to send an SMS
   var phoneNumberArray = request.params.phoneNumbers;
-  console.log(request.params.phoneNumbers);
+  var sendingUser = request.params.sendingUser;
+  var statusUrl = request.params.statusUrl;
   for(var i = 0; i < phoneNumberArray.length; i++)
   {
     console.log(phoneNumberArray[i]);
     twilio.sendSMS({
       From: "+1-832-463-2623",
       To: phoneNumberArray[i],
-      Body: "Start using Parse and Twilio!"
+      Body: sendingUser + " has invited you to an activity on BuddyUp. Click here to find out more: " + statusUrl
     }, {
       success: function(httpResponse) { response.success("SMS sent!"); },
       error: function(httpResponse) { response.error(httpResponse); }
     });
   }
+
+});
+
+Parse.Cloud.job("updateSuggestedFriends", function(request, status) {
+  Parse.Cloud.useMasterKey();
+  query = new Parse.Query("FriendRelation");
 
 });
