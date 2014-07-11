@@ -73,6 +73,49 @@ Parse.Cloud.define("getNewData", function(request, response) {
   var sinceDate = request.since;
   var newSince = new Date();
 
+  var promises = []
+
+  // Get notifications
+  var nullStatusQuery = new Parse.Query("Notification");
+  nullStatusQuery.doesNotExist("status");
+
+  var notDeletedStatusQuery = new Parse.Query("Notification");
+  notDeletedStatusQuery.equalTo("status.deleted", false);
+
+  var statusDeletedNotificationQuery = new Parse.Query("Notification");
+  statusDeletedNotificationQuery.equalTo("type", "deletedStatus");
+
+  var notificationQuery = Parse.Query.or(nullStatusQuery, notDeletedStatusQuery, statusDeletedNotificationQuery);
+  notificationQuery.equalTo("users", request.user);
+
+  if(sinceDate) {
+    notificationQuery.greaterThanOrEqualTo("createdAt", sinceDate);
+  } else {
+    var fiveDaysAgo = new Date((new Date()).getTime() - 60 * 60 * 24 * 5 * 1000);
+    var fiveDaysAgoQuery = new Parse.Query("Notification");
+    fiveDaysAgo.greaterThanOrEqualTo("createdAt", fiveDaysAgo);
+    var notificationTypesNotAffectedByDate = ['requestAccepted', 'requestCanceled', 'requestSent', 'unfriended'];
+    var notificationTypesQuery = new Parse.Query("Notification");
+    notificationTypesQuery.containedIn("type", notificationTypesNotAffectedByDate);
+
+    var fiveDaysAgoOrSpecialTypeQuery = Parse.Query.or(notificationTypesQuery, fiveDaysAgoQuery);
+
+    notificationQuery.matchesKeyInQuery("objectId", "objectId", fiveDaysAgoOrSpecialTypeQuery);
+
+    var statusNotExpiredQuery = new Parse.Query("Notification");
+    statusNotExpiredQuery.greaterThanOrEqualTo("dateExpires", new Date());
+
+    var notExpiredOrNull = Parse.Query.or(statusNotExpiredQuery, nullStatusQuery);
+    notificationQuery.matchesKeyInQuery("objectId", "objectId", notExpiredOrNull);
+  }
+
+  notificationPromise = notificationQuery.find({
+    success: function(notifications) {
+      console.log(notifications);
+    }
+  })
+
+  // Get chats and messages
   var chatsQuery = new Parse.Query("Chat");
   chatsQuery.equalTo("members", request.user);
 
@@ -81,8 +124,9 @@ Parse.Cloud.define("getNewData", function(request, response) {
   if(sinceDate) {
     messageQuery.greaterThanOrEqualTo("createdAt", sinceDate);
   }
-  messageQuery.find({
-    success: function(messages) {
+  messagePromise = messageQuery.find();
+  promises.push(messagePromise);
+  messagePromise.then(function(messages) {
       console.log(messages);
       chats = {}
       for(i=0; i<messages.length; i++) {
@@ -98,21 +142,23 @@ Parse.Cloud.define("getNewData", function(request, response) {
       var chatQuery = new Parse.Query("Chat");
       chatQuery.containedIn("objectId", chatList).include("members");
 
-      chatQuery.find({
-        success: function(chatList) {
-          response.success({"messages": messages, "chats": chatList});
-        },
-
-        error: function(error) {
-          response.error(error);
-        }
-      });
+      return chatQuery.find();
 
     },
 
-    error: function(error) {
-      response.error(error);
+    function(error) {
+      console.log(error);
     }
+  ).then(function(chats) {
+    console.log(chats);
+  });
+
+  console.log(chats);
+  console.log(messages);
+  console.log(notifications);
+
+  promises = Parse.Promise.when(promises).then(function() {
+    response.success({"chats": chats, "messages": messages, "notifications": notifications})
   })
 
 });
