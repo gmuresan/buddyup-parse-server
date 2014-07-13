@@ -35,13 +35,13 @@ Parse.Cloud.afterSave("FriendRelation", function(request) {
   query.equalTo("fromUser", friend).notEqualTo("toUser", user).containedIn("status", ["friends", "blocked"]).matchesKeyInQuery("toUser", "fromUser", mutualQuery);
   query.find({
     success: function(friendRelations) {
-      console.log(friendRelations);
+      //console.log(friendRelations);
       mutualFriendsRelation = request.object.relation("mutualFriends");
       mutualFriendsRelation.query().find({
         success: function(friends) {
           mutualFriendsRelation.remove(friends);
 
-          console.log(friendRelations)
+          //console.log(friendRelations)
           for(i=0; i<friendRelations.length; i++) {
             friendRelation = friendRelations[i];
             mutualFriendsRelation.add(friendRelation.get("toUser"))
@@ -113,7 +113,7 @@ Parse.Cloud.define("getNewData", function(request, response) {
   }
 
   notificationPromise = notificationQuery.find().then(function(notifications) {
-      console.log(notifications);
+      //console.log(notifications);
       newNotifications = notifications;
       return newNotifications;
     }
@@ -150,7 +150,7 @@ Parse.Cloud.define("getNewData", function(request, response) {
       chatQuery.containedIn("objectId", chatList).include("members");
 
       chatPromise = chatQuery.find();
-      promises.push(chatPromise);
+      //promises.push(chatPromise);
       return chatPromise;
 
     },
@@ -159,7 +159,7 @@ Parse.Cloud.define("getNewData", function(request, response) {
       console.log(error);
     }
   ).then(function(chats) {
-    console.log(chats);
+    //console.log(chats);
     newChats = chats;
     return chats;
   });
@@ -204,29 +204,118 @@ Parse.Cloud.define("inviteWithTwilio", function(request, response) {
 
 });
 
+var _ = require('underscore.js');
+
+var DAILY_COMPOUND_RATE = 0.99;
+
+var ATTENDING_WEIGHT = 20;
+var INVITED_WEIGHT = 8;
+var COMMENT_WEIGHT = 2;
+var ACTIVE_CHAT_MESSAGE_WEIGHT = 2;
+var PASSIVE_CHAT_MESSAGE_WEIGHT = 1;
+
 Parse.Cloud.job("updateSuggestedFriends", function(request, status) {
   Parse.Cloud.useMasterKey();
   var query = new Parse.Query("Status");
-  query.find({
-    success: function(statuses) {
-      // console.log(statuses);
-       for(var i = 0; i < statuses.length; i++) {
-         var attending = statuses[i].relation("usersAttending");
-         var friendQuery = new Parse.Query("FriendRelation").equalTo("toUser", statuses[i].get("user"));
+  query.find().then(function(statuses){
 
-         var attendingPromise = attending.query().matchesKeyInQuery("objectId", "fromUser.objectId", friendQuery).find();
-         attendingPromise.then(function(attendingFriendUsers) {
-            console.log(attendingFriendUsers);
-         });
-       }
-      status.success("what the hell");
-    },
-    error: function(error) {
+    var promise = Parse.Promise.as();
 
-    }
-  });
+    _.each(statuses, function(status) {
+
+      promise.then(function() {
+        var attending = status.relation("usersAttending");
+        return attending.query().find();
+
+      }).then(function(attendingUsers){
+
+        var attendingFriendQuery1 = new Parse.Query("FriendRelation");
+        attendingFriendQuery1.equalTo("toUser", status.get("user"));
+        attendingFriendQuery1.containedIn("fromUser", attendingUsers);
+        var attendingFriendQuery2 = new Parse.Query("FriendRelation");
+        attendingFriendQuery2.equalTo("fromUser", status.get("user"));
+        attendingFriendQuery2.containedIn("toUser", attendingUsers);
+        var attendingFriendQuery = new Parse.Query.or(attendingFriendQuery1, attendingFriendQuery2);
+        return attendingFriendQuery.find();
+
+      }).then(function(attendingFriendRelation) {
+
+        for(var i = 0; i < attendingFriendRelation.length; i++) {
+          attendingFriendRelation[i].increment("suggestedFriendScore", ATTENDING_WEIGHT);
+
+        }
+        return Parse.Object.saveAll(attendingFriendRelation);
+      }).then(function(){
+        var invited = status.relation("usersInvited");
+        return invited.query().find();
+      }).then(function(invitedUsers){
+        //console.log(invitedUsers.length);
+        var invitedFriendQuery1 = new Parse.Query("FriendRelation");
+        invitedFriendQuery1.equalTo("toUser", status.get("user"));
+        invitedFriendQuery1.containedIn("fromUser", invitedUsers);
+        var invitedFriendQuery2 = new Parse.Query("FriendRelation");
+        invitedFriendQuery2.equalTo("fromUser", status.get("user"));
+        invitedFriendQuery2.containedIn("toUser", invitedUsers);
+        var invitedFriendQuery = new Parse.Query.or(invitedFriendQuery1, invitedFriendQuery2);
+        return invitedFriendQuery.find();
+
+      }).then(function(invitedFriendRelation) {
+        //console.log(invitedFriendRelation.length);
+        for(var i = 0; i < invitedFriendRelation.length; i++) {
+          invitedFriendRelation[i].increment("suggestedFriendScore", INVITED_WEIGHT);
+        }
+        return Parse.Object.saveAll(invitedFriendRelation);
+
+      }).then(function() {
+        var statusMessageQuery = new Parse.Query("StatusMessage");
+        statusMessageQuery.equalTo("status", status);
+        return statusMessageQuery.find();
+      }).then(function(statusMessages) {
+
+        var messagePromise = new Parse.Promise.as();
+        _.each(statusMessages, function(statusMessage) {
+          messagePromise.then(function() {
+            var messageUserQuery1 = new Parse.Query("FriendRelation");
+            messageUserQuery1.equalTo("toUser", statusMessage.get("user"));
+            messageUserQuery1.equalTo("fromUser", status.get("user"));
+            var messageUserQuery2 = new Parse.Query("FriendRelation");
+            messageUserQuery2.equalTo("fromUser", statusMessage.get("user"));
+            messageUserQuery2.equalTo("toUser", status.get("user"));
+            var messageUserQuery = new Parse.Query.or(messageUserQuery1, messageUserQuery2);
+            return messageUserQuery.find();
+          }).then(function(statusMessageUsers) {
+            console.log(statusMessageUsers.length);
+            for(var i = 0; i < statusMessageUsers.length; i++) {
+              statusMessageUsers[i].increment("suggestedFriendScore", COMMENT_WEIGHT);
+            }
+            return Parse.Object.saveAll(statusMessageUsers);
+          });
+        });
+        return messagePromise;
+
+      });
+
+    });
+    return promise;
+  }).then(function() {
+    console.log("OKAAAY");
+    var chatQuery = new Parse.Query("Chat");
+    return chatQuery.find();
+  }).then(function(chats){
+    console.log("fuck yeah");
+  });   
+
 });
 
-function handleUpdatingAttendingSuggestedFriends( attending){
+Parse.Cloud.job("resetSuggestedScore", function(request, status) {
+  var query = new Parse.Query("FriendRelation");
+  query.find().then(function(friendRelations) {
 
-}
+    for(var i = 0; i < friendRelations.length; i++) {
+      friendRelations[i].set("suggestedFriendScore", 0);
+    }
+    return Parse.Object.saveAll(friendRelations);
+  }).then(function(){
+    status.success("scores are reset");
+  });
+});
