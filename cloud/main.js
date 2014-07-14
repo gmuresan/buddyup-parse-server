@@ -216,14 +216,36 @@ var PASSIVE_CHAT_MESSAGE_WEIGHT = 1;
 
 Parse.Cloud.job("updateSuggestedFriends", function(request, status) {
   Parse.Cloud.useMasterKey();
-  var query = new Parse.Query("Status");
-  query.find().then(function(statuses){
+
+  var oldSuggestedFriendsQuery = new Parse.Query("FriendRelation");
+  oldSuggestedFriendsQuery.find().then(function(suggestedFriends) {
+    for(var i = 0; i < suggestedFriends.length; i++) {
+      var score = suggestedFriends[i].get("suggestedFriendScore");
+      var newScore = score*DAILY_COMPOUND_RATE;
+      suggestedFriends[i].set("suggestedFriendScore", newScore);
+    }
+    return Parse.Object.saveAll(suggestedFriends);
+  }).then(function() {
+    var query = new Parse.Query("SuggestedFriendsRunDate");
+    var dateSinceUpdate;
+    return query.first();
+  }).then(function(lastUpdatedDate) {
+    dateSinceUpdate = lastUpdatedDate;
+    var query = new Parse.Query("Status");
+    if(dateSinceUpdate != null)
+    {
+      query.greaterThanOrEqualTo("dateExpires", dateSinceUpdate.get("lastUpdate"));
+    }
+    return query.find();
+
+
+  }).then(function(statuses){
 
     var promise = Parse.Promise.as();
 
     _.each(statuses, function(status) {
 
-      promise.then(function() {
+      promise = promise.then(function() {
         var attending = status.relation("usersAttending");
         return attending.query().find();
 
@@ -274,7 +296,7 @@ Parse.Cloud.job("updateSuggestedFriends", function(request, status) {
 
         var messagePromise = new Parse.Promise.as();
         _.each(statusMessages, function(statusMessage) {
-          messagePromise.then(function() {
+          messagePromise = messagePromise.then(function() {
             var messageUserQuery1 = new Parse.Query("FriendRelation");
             messageUserQuery1.equalTo("toUser", statusMessage.get("user"));
             messageUserQuery1.equalTo("fromUser", status.get("user"));
@@ -284,7 +306,7 @@ Parse.Cloud.job("updateSuggestedFriends", function(request, status) {
             var messageUserQuery = new Parse.Query.or(messageUserQuery1, messageUserQuery2);
             return messageUserQuery.find();
           }).then(function(statusMessageUsers) {
-            console.log(statusMessageUsers.length);
+            //console.log(statusMessageUsers.length);
             for(var i = 0; i < statusMessageUsers.length; i++) {
               statusMessageUsers[i].increment("suggestedFriendScore", COMMENT_WEIGHT);
             }
@@ -298,11 +320,77 @@ Parse.Cloud.job("updateSuggestedFriends", function(request, status) {
     });
     return promise;
   }).then(function() {
-    console.log("OKAAAY");
     var chatQuery = new Parse.Query("Chat");
+    chatQuery.include("members");
     return chatQuery.find();
   }).then(function(chats){
-    console.log("fuck yeah");
+    //console.log(chats);
+    var chatPromise = Parse.Promise.as();
+
+    _.each(chats, function(chat) {
+      chatPromise = chatPromise.then(function() {
+        //console.log(chat.get("members"));
+        var chatMessageQuery = new Parse.Query("ChatMessage");
+        chatMessageQuery.equalTo("chat", chat);
+        if(dateSinceUpdate != null)
+        {
+          chatQuery.greaterThanOrEqualTo("createdAt", dateSinceUpdate.get("lastUpdate"));
+        }
+        return chatMessageQuery.find();
+      }).then(function(chatMessages) {
+        var chatMessagePromise = Parse.Promise.as();
+        _.each(chatMessages, function(chatMessage) {
+          chatMessagePromise = chatMessagePromise.then(function() {
+            var creator = chatMessage.get("user");
+            var members = chat.get("members");
+            var chatFriendRelationQuery1 = new Parse.Query("FriendRelation");
+            chatFriendRelationQuery1.equalTo("toUser", creator);
+            chatFriendRelationQuery1.containedIn("fromUser", members);
+            var chatFriendRelationQuery2 = new Parse.Query("FriendRelation");
+            chatFriendRelationQuery2.equalTo("fromUser", creator);
+            chatFriendRelationQuery2.containedIn("toUser", members);
+            var chatFriendRelationQuery = new Parse.Query.or(chatFriendRelationQuery1, chatFriendRelationQuery2);
+            return chatFriendRelationQuery.find();
+          }).then(function(chatFriends) {
+            console.log(chatFriends.length);
+            for(var i = 0; i < chatFriends.length; i++) {
+              chatFriends[i].increment("suggestedFriendScore", ACTIVE_CHAT_MESSAGE_WEIGHT);
+            }
+            return Parse.Object.saveAll(chatFriends);
+          }).then(function() {           
+            var creator = chatMessage.get("user");
+            var members = chat.get("members");
+            var passiveMemberQuery = new Parse.Query("FriendRelation");
+            passiveMemberQuery.containedIn("toUser", members);
+            passiveMemberQuery.notEqualTo("toUser", creator);
+            passiveMemberQuery.containedIn("fromUser", members);
+            passiveMemberQuery.notEqualTo("fromUser", creator);
+            return passiveMemberQuery.find();
+          }).then(function(passiveFriends){
+            for(var i = 0; i < passiveFriends.length; i++) {
+              passiveFriends[i].increment("suggestedFriendScore", PASSIVE_CHAT_MESSAGE_WEIGHT);
+            }
+            return Parse.Object.saveAll(passiveFriends);
+          });
+        });
+        return chatMessagePromise;
+      });
+    });
+    return chatPromise;
+  }).then(function() {
+    console.log(dateSinceUpdate);
+    if(dateSinceUpdate == null) {
+      console.log("It worrrkes");
+      var LastUpdate = Parse.Object.extend({
+        className: "SuggestedFriendsRunDate"
+      });
+      var lastUpdate = new LastUpdate();
+      lastUpdate.set("lastUpdate", new Date());
+      return lastUpdate.save(); 
+    } else {
+      dateSinceUpdate.set("lastUpdate", new Date());
+      return dateSinceUpdate.save();
+    }
   });   
 
 });
@@ -316,6 +404,12 @@ Parse.Cloud.job("resetSuggestedScore", function(request, status) {
     }
     return Parse.Object.saveAll(friendRelations);
   }).then(function(){
+    var lastUpdateQuery = new Parse.Query("SuggestedFriendsRunDate");
+    return lastUpdateQuery.first();
+  }).then(function(lastUpdate) {
+   // lastUpdate.unset("lastUpdate");
+    return lastUpdate.destroy();
+  }).then(function() {
     status.success("scores are reset");
   });
 });
