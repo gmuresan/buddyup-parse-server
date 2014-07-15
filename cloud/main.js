@@ -1,71 +1,143 @@
 
 // Use Parse.Cloud.define to define as many cloud functions as you want.
 // For example:
-Parse.Cloud.define("hello", function(request, response) {
-  response.success("Hello world!");
-});
+// Parse.Cloud.define("hello", function(request, response) {
+//   response.success("Hello world!");
+// });
 
-Parse.Cloud.afterSave("FriendRelation", function(request) {
+// Parse.Cloud.afterSave("FriendRelation", function(request) {
 
-  updateMutualFriends = false;
+//   updateMutualFriends = false;
 
-  previousStatus = request.object.previous("status");
-  if(previousStatus == "friends" || previousStatus == "unfriended") {
-    currentStatus = request.object.get("status");
+//   previousStatus = request.object.previous("status");
+//   if(previousStatus == "friends" || previousStatus == "unfriended") {
+//     currentStatus = request.object.get("status");
 
-    if(currentStatus == "friends" || currentStatus == "unfriended") {
-      updateMutualFriends = true;
-    }
-  }
+//     if(currentStatus == "friends" || currentStatus == "unfriended") {
+//       updateMutualFriends = true;
+//     }
+//   }
 
-  if(!updateMutualFriends) {
-    //response.success();
-    return;
-  }
+//   if(!updateMutualFriends) {
+//     //response.success();
+//     return;
+//   }
 
-  request.object.save({silent: true});
+//   request.object.save({silent: true});
 
-  user = request.object.get("fromUser");
-  friend = request.object.get("toUser");
+//   user = request.object.get("fromUser");
+//   friend = request.object.get("toUser");
 
-  mutualQuery = new Parse.Query("FriendRelation");
-  mutualQuery.equalTo("toUser", user);
+//   mutualQuery = new Parse.Query("FriendRelation");
+//   mutualQuery.equalTo("toUser", user);
 
-  query = new Parse.Query("FriendRelation");
-  query.equalTo("fromUser", friend).notEqualTo("toUser", user).containedIn("status", ["friends", "blocked"]).matchesKeyInQuery("toUser", "fromUser", mutualQuery);
-  query.find({
-    success: function(friendRelations) {
-      //console.log(friendRelations);
-      mutualFriendsRelation = request.object.relation("mutualFriends");
-      mutualFriendsRelation.query().find({
-        success: function(friends) {
-          mutualFriendsRelation.remove(friends);
+//   query = new Parse.Query("FriendRelation");
+//   query.equalTo("fromUser", friend).notEqualTo("toUser", user).containedIn("status", ["friends", "blocked"]).matchesKeyInQuery("toUser", "fromUser", mutualQuery);
+//   query.find({
+//     success: function(friendRelations) {
+//       //console.log(friendRelations);
+//       mutualFriendsRelation = request.object.relation("mutualFriends");
+//       mutualFriendsRelation.query().find({
+//         success: function(friends) {
+//           mutualFriendsRelation.remove(friends);
 
-          //console.log(friendRelations)
-          for(i=0; i<friendRelations.length; i++) {
-            friendRelation = friendRelations[i];
-            mutualFriendsRelation.add(friendRelation.get("toUser"))
-          }
+//           //console.log(friendRelations)
+//           for(i=0; i<friendRelations.length; i++) {
+//             friendRelation = friendRelations[i];
+//             mutualFriendsRelation.add(friendRelation.get("toUser"))
+//           }
 
-          //response.success();
-        },
+//           //response.success();
+//         },
 
-        error: function(error) {
-          console.error("Got an error " + error.code + " : " + error.message);
-          //response.error();
-        }
+//         error: function(error) {
+//           console.error("Got an error " + error.code + " : " + error.message);
+//           //response.error();
+//         }
 
-      })
+//       })
       
-    },
+//     },
 
-    error: function(error) {
-      console.error("Got an error " + error.code + " : " + error.message);
-      //response.error();
-    }
-  });
+//     error: function(error) {
+//       console.error("Got an error " + error.code + " : " + error.message);
+//       //response.error();
+//     }
+//   });
 
-});
+// });
+
+
+// Parse.Cloud.beforeSave("Notification", function(request, response) {
+//   notification = request.object;
+
+//   var type = notification.get("type");
+//   var user = request.object.get("user");
+//   var status = request.object.get("status");
+//   console.log(status);
+
+//   var fullName = "";
+
+//   promises = [];
+
+//   userQuery = new Parse.Query(Parse.User);
+//   promises.push(userQuery.get(user.id).then(function(user) {
+//     var firstName = user.get("firstName");
+//     var lastName = user.get("lastName");
+//     fullName = firstName + " " + lastName;
+//   }));
+
+//   if(status) {
+//     statusQuery = new Parse.Query("Status");
+//     promises.push(statusQuery.get(status.id).then(function(statusFound) {
+//       status = statusFound;
+//     }));
+//   }
+
+//   waiting = Parse.Promise.when(promises).then(function() {
+//     console.log(status);
+//     console.log(user);
+
+//     var text;
+
+//     if(type == "attendingStatus") {
+//       text = fullName + " is now attending " + status.get("text");
+//     } else if(type == "friendJoined") {
+//       text = fullName + " has joined BuddyUp";
+//     } else if(type == "requestAccepted") {
+//       text = fullName + " has accepted your friend request";
+//     } else if(type == "requestCanceled") {
+//       text = fullName + " canceled friend request";
+//     } else if(type == "requestSent") {
+//       text = fullName + " wants to be your friend";
+//     } else if(type == "invitedStatus") {
+//       text = "You have been invited to " + status.get("text") + " by " + fullName;
+//     } else if(type == "changedStatus") {
+//       text = fullName + " has made changes to their activity " + status.get("text");
+//     } else if(type == "deletedStatus") {
+//       text = fullName + " has deleted " + status.get("text");
+//     } else if(type == "statusMessage") { 
+//       if(request.object.get("message").get("messageImageUrl")) {
+//         text = fullName + " added a picture to " + status.get("text");
+//       } else {
+//         text = fullName + " commented on " + status.get("text") + ": " + request.object.get("message").get("text");
+//       }
+                  
+//     } else if(type == "unfriended") {
+//       text = fullName + " has unfriended you";
+//     } else {
+//       text = "";
+//     }
+//     console.log(text);
+
+//     notification.set("text", text);
+
+//     response.success();
+//   });
+
+  
+
+// });
 
 
 Parse.Cloud.define("getNewData", function(request, response) {
@@ -74,51 +146,74 @@ Parse.Cloud.define("getNewData", function(request, response) {
   var newSince = new Date();
 
   var promises = []
-  var newChats;
-  var newNotifications;
-  var newMessages;
+  var newChats = [];
+  var newNotifications = [];
+  var newMessages = []
 
   // Get notifications
   var nullStatusQuery = new Parse.Query("Notification");
   nullStatusQuery.doesNotExist("status");
 
-  var notDeletedStatusQuery = new Parse.Query("Notification");
-  notDeletedStatusQuery.equalTo("status.deleted", false);
-
   var statusDeletedNotificationQuery = new Parse.Query("Notification");
   statusDeletedNotificationQuery.equalTo("type", "deletedStatus");
 
-  var notificationQuery = Parse.Query.or(nullStatusQuery, notDeletedStatusQuery, statusDeletedNotificationQuery);
+  var notificationQuery = Parse.Query.or(nullStatusQuery, statusDeletedNotificationQuery);
   notificationQuery.equalTo("users", request.user);
+  notificationQuery.include("status").include("status.location");
+  notificationQuery.include("user");
 
   if(sinceDate) {
     notificationQuery.greaterThanOrEqualTo("createdAt", sinceDate);
   } else {
-    var fiveDaysAgo = new Date((new Date()).getTime() - 60 * 60 * 24 * 5 * 1000);
-    var fiveDaysAgoQuery = new Parse.Query("Notification");
-    fiveDaysAgoQuery.greaterThanOrEqualTo("createdAt", fiveDaysAgo);
-    var notificationTypesNotAffectedByDate = ['requestAccepted', 'requestCanceled', 'requestSent', 'unfriended'];
-    var notificationTypesQuery = new Parse.Query("Notification");
-    notificationTypesQuery.containedIn("type", notificationTypesNotAffectedByDate);
+     var fiveDaysAgo = new Date((new Date()).getTime() - 60 * 60 * 24 * 5 * 1000);
+     var fiveDaysAgoQuery = new Parse.Query("Notification");
+     fiveDaysAgoQuery.greaterThanOrEqualTo("createdAt", fiveDaysAgo);
 
-    var fiveDaysAgoOrSpecialTypeQuery = Parse.Query.or(notificationTypesQuery, fiveDaysAgoQuery);
+     var notificationTypesNotAffectedByDate = ['requestAccepted', 'requestCanceled', 'requestSent', 'unfriended'];
+     var notificationTypesQuery = new Parse.Query("Notification");
+     notificationTypesQuery.containedIn("type", notificationTypesNotAffectedByDate);
 
-    notificationQuery.matchesKeyInQuery("objectId", "objectId", fiveDaysAgoOrSpecialTypeQuery);
+     var fiveDaysAgoOrSpecialTypeQuery = Parse.Query.or(notificationTypesQuery, fiveDaysAgoQuery);
 
-    var statusNotExpiredQuery = new Parse.Query("Notification");
-    statusNotExpiredQuery.greaterThanOrEqualTo("dateExpires", new Date());
+     notificationQuery.matchesKeyInQuery("objectId", "objectId", fiveDaysAgoOrSpecialTypeQuery);
 
-    var notExpiredOrNull = Parse.Query.or(statusNotExpiredQuery, nullStatusQuery);
-    notificationQuery.matchesKeyInQuery("objectId", "objectId", notExpiredOrNull);
+     var statusNotExpiredQuery = new Parse.Query("Notification");
+     statusNotExpiredQuery.greaterThanOrEqualTo("dateExpires", new Date());
+
+     var notExpiredOrNull = Parse.Query.or(statusNotExpiredQuery, nullStatusQuery);
+     notificationQuery.matchesKeyInQuery("objectId", "objectId", notExpiredOrNull);
   }
 
-  notificationPromise = notificationQuery.find().then(function(notifications) {
+  promises.push(notificationQuery.find().then(function(notifications) {
       //console.log(notifications);
-      newNotifications = notifications;
+      //users = [];
+
+      for(i=0; i<notifications.length; i++) {
+        notif = notifications[i];
+        status = notif.get("status");
+        if(!status || status.get("deleted") != true) {
+          notif["text"] = "Friend Request"; 
+          newNotifications.push(notif);
+          //users.push(notif.get("user"));
+        }
+      }
+      
       return newNotifications;
+      // var friendsQuery = new Parse.Query("FriendRelation");
+      // friendsQuery.equalTo("fromUser", request.user);
+      // friendsQuery.containedIn("objectId", users);
+      // friendsQuery.containedIn("status", ["friends", "blocked"]);
+
+      // return friendsQuery.find();
+
+    },
+    function(error) {
+      console.log("notif");
+      console.log(error);
     }
-  );
-  promises.push(notificationPromise);
+  ).then(function(friendRelations) {
+
+  }));
 
   // Get chats and messages
   var chatsQuery = new Parse.Query("Chat");
@@ -130,9 +225,7 @@ Parse.Cloud.define("getNewData", function(request, response) {
     messageQuery.greaterThanOrEqualTo("createdAt", sinceDate);
   }
   messagePromise = messageQuery.find();
-  promises.push(messagePromise);
-  messagePromise.then(function(messages) {
-      //console.log(messages);
+  promises.push(messagePromise.then(function(messages) {
       newMessages = messages;
 
       chats = {}
@@ -150,32 +243,28 @@ Parse.Cloud.define("getNewData", function(request, response) {
       chatQuery.containedIn("objectId", chatList).include("members");
 
       chatPromise = chatQuery.find();
-      //promises.push(chatPromise);
       return chatPromise;
 
     },
 
     function(error) {
+
       console.log(error);
     }
-  ).then(function(chats) {
-    //console.log(chats);
-    newChats = chats;
-    return chats;
+  ).then(
+    function(chats) {
+      newChats = chats;
+      return chats;
+    },
+    function(error) {
+      console.log("chats");
+      console.log(error);
+    }
+  ));
+
+  promises2 = Parse.Promise.when(promises).then(function(a, b) {
+    response.success({"chats": newChats, "messages": newMessages, "notifications": newNotifications, "newSince": newSince})
   });
-
-  //console.log(newChats);
-  //console.log(newMessages);
-  //console.log(newNotifications);
-
-  //console.log(promises);
-
-  promises = Parse.Promise.when(promises).then(function(a, b, c) {
-    //console.log(a);
-    //console.log(b);
-    //console.log(c);
-    response.success({"chats": newChats, "messages": newMessages, "notifications": newNotifications})
-  })
 
 });
 
