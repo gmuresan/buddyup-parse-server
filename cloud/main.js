@@ -158,7 +158,12 @@ Parse.Cloud.define("getNewData", function(request, response) {
   var statusDeletedNotificationQuery = new Parse.Query("Notification");
   statusDeletedNotificationQuery.equalTo("type", "deletedStatus");
 
-  var notificationQuery = Parse.Query.or(nullStatusQuery, statusDeletedNotificationQuery);
+  var statusNotDeletedQuery = new Parse.Query("Status");
+  statusNotDeletedQuery.equalTo("deleted", false);
+  var notificationsWithStatusNotDeletedQuery = new Parse.Query("Notification");
+  notificationsWithStatusNotDeletedQuery.matchesKeyInQuery("status", "objectId", statusNotDeletedQuery);
+
+  var notificationQuery = Parse.Query.or(nullStatusQuery, statusDeletedNotificationQuery, notificationsWithStatusNotDeletedQuery);
   notificationQuery.equalTo("users", request.user);
   notificationQuery.include("status").include("status.location");
   notificationQuery.include("user");
