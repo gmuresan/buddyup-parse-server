@@ -5,6 +5,28 @@
 //   response.success("Hello world!");
 // });
 
+Parse.Cloud.beforeSave("FriendRelation", function(request, response) {
+  if (!request.object.existed()) {
+    var query = new Parse.Query("FriendRelation");
+    query.equalTo("fromUser", request.object.get("fromUser"));
+    query.equalTo("toUser", request.object.get("toUser"));
+
+    query.first().then(function(friendRelation) {
+      if(friendRelation) {
+        response.error();
+      } else {
+        response.success();
+      }
+    }, function(error) {
+      response.success();
+    });
+
+  } else {
+    response.success();
+  }
+});
+
+
 // Parse.Cloud.afterSave("FriendRelation", function(request) {
 
 //   updateMutualFriends = false;
@@ -66,79 +88,6 @@
 //   });
 
 // });
-
-
-// Parse.Cloud.beforeSave("Notification", function(request, response) {
-//   notification = request.object;
-
-//   var type = notification.get("type");
-//   var user = request.object.get("user");
-//   var status = request.object.get("status");
-//   console.log(status);
-
-//   var fullName = "";
-
-//   promises = [];
-
-//   userQuery = new Parse.Query(Parse.User);
-//   promises.push(userQuery.get(user.id).then(function(user) {
-//     var firstName = user.get("firstName");
-//     var lastName = user.get("lastName");
-//     fullName = firstName + " " + lastName;
-//   }));
-
-//   if(status) {
-//     statusQuery = new Parse.Query("Status");
-//     promises.push(statusQuery.get(status.id).then(function(statusFound) {
-//       status = statusFound;
-//     }));
-//   }
-
-//   waiting = Parse.Promise.when(promises).then(function() {
-//     console.log(status);
-//     console.log(user);
-
-//     var text;
-
-//     if(type == "attendingStatus") {
-//       text = fullName + " is now attending " + status.get("text");
-//     } else if(type == "friendJoined") {
-//       text = fullName + " has joined BuddyUp";
-//     } else if(type == "requestAccepted") {
-//       text = fullName + " has accepted your friend request";
-//     } else if(type == "requestCanceled") {
-//       text = fullName + " canceled friend request";
-//     } else if(type == "requestSent") {
-//       text = fullName + " wants to be your friend";
-//     } else if(type == "invitedStatus") {
-//       text = "You have been invited to " + status.get("text") + " by " + fullName;
-//     } else if(type == "changedStatus") {
-//       text = fullName + " has made changes to their activity " + status.get("text");
-//     } else if(type == "deletedStatus") {
-//       text = fullName + " has deleted " + status.get("text");
-//     } else if(type == "statusMessage") { 
-//       if(request.object.get("message").get("messageImageUrl")) {
-//         text = fullName + " added a picture to " + status.get("text");
-//       } else {
-//         text = fullName + " commented on " + status.get("text") + ": " + request.object.get("message").get("text");
-//       }
-                  
-//     } else if(type == "unfriended") {
-//       text = fullName + " has unfriended you";
-//     } else {
-//       text = "";
-//     }
-//     console.log(text);
-
-//     notification.set("text", text);
-
-//     response.success();
-//   });
-
-  
-
-// });
-
 
 Parse.Cloud.define("getNewData", function(request, response) {
   
