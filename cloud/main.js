@@ -232,6 +232,8 @@ Parse.Cloud.job("updateSuggestedFriends", function(request, status) {
   }).then(function(lastUpdatedDate) {
     dateSinceUpdate = lastUpdatedDate;
     var query = new Parse.Query("Status");
+    query.include("usersAttending");
+    query.include("usersInvited");
     if(dateSinceUpdate != null)
     {
       query.greaterThanOrEqualTo("dateExpires", dateSinceUpdate.get("lastUpdate"));
@@ -246,22 +248,18 @@ Parse.Cloud.job("updateSuggestedFriends", function(request, status) {
     _.each(statuses, function(status) {
 
       promise = promise.then(function() {
-        var attending = status.relation("usersAttending");
-        return attending.query().find();
-
-      }).then(function(attendingUsers){
 
         var attendingFriendQuery1 = new Parse.Query("FriendRelation");
         attendingFriendQuery1.equalTo("toUser", status.get("user"));
-        attendingFriendQuery1.containedIn("fromUser", attendingUsers);
+        attendingFriendQuery1.containedIn("fromUser", status.attendingUsers);
         var attendingFriendQuery2 = new Parse.Query("FriendRelation");
         attendingFriendQuery2.equalTo("fromUser", status.get("user"));
-        attendingFriendQuery2.containedIn("toUser", attendingUsers);
+        attendingFriendQuery2.containedIn("toUser", status.attendingUsers);
         var attendingFriendQuery = new Parse.Query.or(attendingFriendQuery1, attendingFriendQuery2);
         return attendingFriendQuery.find();
 
       }).then(function(attendingFriendRelation) {
-
+        console.log(attendingFriendRelation.length);
         for(var i = 0; i < attendingFriendRelation.length; i++) {
           attendingFriendRelation[i].increment("suggestedFriendScore", ATTENDING_WEIGHT);
 
@@ -391,6 +389,8 @@ Parse.Cloud.job("updateSuggestedFriends", function(request, status) {
       dateSinceUpdate.set("lastUpdate", new Date());
       return dateSinceUpdate.save();
     }
+  }).then(function(){
+    status.success("friends suggested score is updated");
   });   
 
 });
