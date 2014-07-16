@@ -142,7 +142,8 @@
 
 Parse.Cloud.define("getNewData", function(request, response) {
   
-  var sinceDate = request.since;
+  var sinceDate = request.params.since;
+  console.log(sinceDate);
   var newSince = new Date();
 
   var promises = []
@@ -340,31 +341,29 @@ Parse.Cloud.job("updateSuggestedFriends", function(request, status) {
 
         var attendingFriendQuery1 = new Parse.Query("FriendRelation");
         attendingFriendQuery1.equalTo("toUser", status.get("user"));
-        attendingFriendQuery1.containedIn("fromUser", status.attendingUsers);
+        attendingFriendQuery1.containedIn("fromUser", status.get("usersAttending"));
         var attendingFriendQuery2 = new Parse.Query("FriendRelation");
         attendingFriendQuery2.equalTo("fromUser", status.get("user"));
-        attendingFriendQuery2.containedIn("toUser", status.attendingUsers);
+        attendingFriendQuery2.containedIn("toUser", status.get("usersAttending"));
         var attendingFriendQuery = new Parse.Query.or(attendingFriendQuery1, attendingFriendQuery2);
         return attendingFriendQuery.find();
 
       }).then(function(attendingFriendRelation) {
         console.log(attendingFriendRelation.length);
         for(var i = 0; i < attendingFriendRelation.length; i++) {
+          //console.log(i);
           attendingFriendRelation[i].increment("suggestedFriendScore", ATTENDING_WEIGHT);
 
         }
         return Parse.Object.saveAll(attendingFriendRelation);
       }).then(function(){
-        var invited = status.relation("usersInvited");
-        return invited.query().find();
-      }).then(function(invitedUsers){
         //console.log(invitedUsers.length);
         var invitedFriendQuery1 = new Parse.Query("FriendRelation");
         invitedFriendQuery1.equalTo("toUser", status.get("user"));
-        invitedFriendQuery1.containedIn("fromUser", invitedUsers);
+        invitedFriendQuery1.containedIn("fromUser", status.get("usersInvited"));
         var invitedFriendQuery2 = new Parse.Query("FriendRelation");
         invitedFriendQuery2.equalTo("fromUser", status.get("user"));
-        invitedFriendQuery2.containedIn("toUser", invitedUsers);
+        invitedFriendQuery2.containedIn("toUser", status.get("usersInvited"));
         var invitedFriendQuery = new Parse.Query.or(invitedFriendQuery1, invitedFriendQuery2);
         return invitedFriendQuery.find();
 
@@ -421,7 +420,7 @@ Parse.Cloud.job("updateSuggestedFriends", function(request, status) {
         chatMessageQuery.equalTo("chat", chat);
         if(dateSinceUpdate != null)
         {
-          chatQuery.greaterThanOrEqualTo("createdAt", dateSinceUpdate.get("lastUpdate"));
+          chatMessageQuery.greaterThanOrEqualTo("createdAt", dateSinceUpdate.get("lastUpdate"));
         }
         return chatMessageQuery.find();
       }).then(function(chatMessages) {
@@ -439,7 +438,7 @@ Parse.Cloud.job("updateSuggestedFriends", function(request, status) {
             var chatFriendRelationQuery = new Parse.Query.or(chatFriendRelationQuery1, chatFriendRelationQuery2);
             return chatFriendRelationQuery.find();
           }).then(function(chatFriends) {
-            console.log(chatFriends.length);
+            //console.log(chatFriends.length);
             for(var i = 0; i < chatFriends.length; i++) {
               chatFriends[i].increment("suggestedFriendScore", ACTIVE_CHAT_MESSAGE_WEIGHT);
             }
@@ -475,10 +474,12 @@ Parse.Cloud.job("updateSuggestedFriends", function(request, status) {
       lastUpdate.set("lastUpdate", new Date());
       return lastUpdate.save(); 
     } else {
+      console.log("lastupdate");
       dateSinceUpdate.set("lastUpdate", new Date());
       return dateSinceUpdate.save();
     }
   }).then(function(){
+    console.log("wtf");
     status.success("friends suggested score is updated");
   });   
 
