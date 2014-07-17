@@ -30,7 +30,7 @@ app.get('/current_activity', function(req, res) {
 			res.render('current_activity' , {creatorName: user.get("firstName") + " " + user.get("lastName"),
 											 facebookProfPic: "http://graph.facebook.com/" + user.get("facebookid") + "/picture?type=square&width=100&height=100",
 											 statusText: status.get("text"),
-											 timeIntervalText: status.get("timeIntervalText"),
+											 timeIntervalText: timeIntervalText,
 											 locationVenue: location.get("venue")});
 
 		},
@@ -56,21 +56,43 @@ function getTimeIntervalText(dateStartsStr, dateExpiresStr, timeZoneOffset) {
 	var endIsTomorrow = dateIsTomorrow(copyDateExpires);
 
 	if(startIsToday || startIsTomorrow) {
-			console.log("dateStarts" + dateStartsTZ)
+			//console.log("dateStarts" + dateStartsTZ)
 		startString = formatAMPM(dateStartsTZ);
 		if(startIsTomorrow) {
 			startString = "Tomorrow at " + startString;
 		}
-		console.log(startString);
+		//console.log(startString);
 	} else if( dateIsBetweenTwoAndSixDaysInFuture(copyDateStarts)) { //copy date already has time 0 out becaues of dateIsToday function
 		startString = getWeekTimeFormat(dateStartsTZ);
-		console.log(startString);
+		//console.log(startString);
 	} else {
 		startString = getWeekMonthDayFormat(dateStartsTZ);
-		console.log(startString);
+		//console.log(startString);
 	}
-	console.log("today " + startIsToday);
-	console.log("tomorrow " + startIsTomorrow);
+
+	if(endIsToday || endIsTomorrow) {
+		endString = formatAMPM(dateExpiresTZ);
+		if(endIsTomorrow && !startIsTomorrow) {
+			endString = "Tomorrow at " + endString;
+		}
+		console.log(endString);
+	} else if(dateIsBetweenTwoAndSixDaysInFuture(copyDateExpires)) {
+		if(dateIsSameDay(copyDateStarts, copyDateExpires)) {
+			endString = formatAMPM(dateExpiresTZ);
+		} else {
+			endString = getWeekTimeFormat(dateExpiresTZ);
+		}
+	} else {
+		if(dateIsSameDay(copyDateStarts, copyDateExpires)) {
+			endString = formatAMPM(dateExpiresTZ);
+		} else {
+			endString = getWeekMonthDayFormat(dateExpiresTZ);
+		}
+	}
+
+	return startString + " until " + endString;
+	//console.log("today " + startIsToday);
+	//console.log("tomorrow " + startIsTomorrow);
 
 	//var startIsToday = 
 	//console.log("Teeeeest");
@@ -160,6 +182,13 @@ function getWeekMonthDayFormat(date) {
 	result = result + " " + date.getMonthAbrName() + " " + date.getDate();
 	result = result + " at " + formatAMPM(date);
 	return result;
+}
+
+function dateIsSameDay(date1, date2) {  //only will work if time is 0 for both dates
+	console.log(date1);
+	console.log(date2);
+	console.log("bool value :" + (date1 == date2));
+	return date1.getTime() == date2.getTime();
 }
 
 // // Example reading from the request query string of an HTTP get request.
