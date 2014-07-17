@@ -14,7 +14,7 @@ Parse.Cloud.beforeSave("FriendRelation", function(request, response) {
 
     query.first().then(function(friendRelation) {
       if(friendRelation) {
-        response.error();
+        response.error("");
       } else {
         response.success();
       }
