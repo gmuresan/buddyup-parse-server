@@ -13,29 +13,28 @@
     <!--script type="text/javascript"
       src="https://maps.googleapis.com/maps/api/js?key={{ mapsKey }}&sensor=TRUE">
     </script-->
+             <!-- src="https://maps.googleapis.com/maps/api/js?sensor=TRUE"-->
     <script type="text/javascript"
-        {% if debug %}
-            src="https://maps.googleapis.com/maps/api/js?sensor=TRUE">
-        {% else %}
-             src="https://maps.googleapis.com/maps/api/js?sensor=TRUE&key={{ mapsKey }}">
-        {% endif %}
+            <% var googleMapsURL = "https://maps.googleapis.com/maps/api/js?sensor=TRUE&key=" + mapKey; %>
+             src= <%= googleMapsURL %> >
 
+             alert("asdfsdf");
     </script>
 
     <script type="text/javascript">
       function initialize() {
-          var locationLatLng = new google.maps.LatLng({{ status.location.lat }}, {{ status.location.lng }});
+          console.log(<%= geoPoint.latitude %>);
+        var locationLatLng = new google.maps.LatLng(<%= geoPoint.latitude %>, <%= geoPoint.longitude %>);
         var mapOptions = {
           center: locationLatLng,
           zoom: 15
         };
         var map = new google.maps.Map(document.getElementById("map-canvas"),
             mapOptions);
-
         var marker = new google.maps.Marker({
             position: locationLatLng,
             map: map,
-            title: '{{ status.location.venue }}'
+            title: "<%= locationVenue %>"
         });
       }
       google.maps.event.addDomListener(window, 'load', initialize);
@@ -44,7 +43,7 @@
 </head>
 <body>
     <div id="cur-act">
-        <img id="cur-act-banner" src="{% static 'img/current_activity_web_banner.png' %}" />
+        <img id="cur-act-banner" src='img/current_activity_web_banner.png'  />
 
         <div id="map-canvas" style="width:100%; height:200px; top:-7px;" ></div>
 
@@ -61,71 +60,73 @@
                 <% if(address != locationVenue){ %>
                     <div id="cur-act-address" class="light-blue-text"><%= address %></div>
                 <% } %>
-                <img id="cur-act-status-type-img" src="{{ status.getStatusTypeIconUrl }}" />
+                <img id="cur-act-status-type-img" src=<%= activityTypeUrl %> />
             </div>
 
             <div id="cur-act-going-invited">
                 <div id="cur-act-going" >
                     <div class="going-invited-bar">Going</div>
                     <table class="cur-act-users">
-                        {% for user in buddyupAttending %}
+                        <% usersAttending.forEach(function(user, index, buddyupAttending) { %>
 
-                            {% if forloop.counter0|divisibleby:3 %}
+                            <% if(index%3 == 0) { %>
                             <tr>
-                            {% endif %}
+                            <%  } %>
 
                             <td class="cur-act-user">
-                                <img src="http://graph.facebook.com/{{ user.facebookUID }}/picture?type=square&width=100&height=100" />
-                                <div>{{ user.user.first_name }} {{ user.user.last_name }}</div>
+                                <% var fbURL = "http://graph.facebook.com/" + user.get("facebookid") + "/picture?type=square&width=100&height=100"  %>
+                                <img src=<%= fbURL %> />
+                                <div><%= user.get("firstName") %> <%= user.get("lastName") %> </div>
                             </td>
 
-                            {% if buddyupAttending|length < 3 and forloop.counter == buddyupAttending|length %}
-                                {% if buddyupAttending|length == 2 %}
+                            <% if( buddyupAttending.length < 3 && index == buddyupAttending.length - 1) { %>
+                                <% if (buddyupAttending.length == 2) {  %>
                                     <td class="cur-act-user"></td>
-                                {% elif buddyupAttending|length == 1%}
+                                <% } else if (buddyupAttending.length == 1) { %>
                                     <td class="cur-act-user"></td>
                                     <td class="cur-act-user"></td>
-                                {% endif %}
-                            {% endif %}
+                                <% }   %>
+                            <% } %>
 
-                            {% if forloop.counter|divisibleby:3 %}
-                            </tr>
-                            {% endif %}
-                        {% endfor %}
+                            <% if (index%3 == 2) { %>
+                                </tr>
+                            <% } %>
+                        <% }); %>
                     </table>
                 </div>
 
                 <div id="cur-act-invited">
                     <div class="going-invited-bar">Invited</div>
                     <table class="cur-act-users">
-                        {% for user in invited %}
+                        <% if(usersInvited != null ) { usersInvited.forEach(function(user, index, buddyupInvited) { %>
 
-                            {% if forloop.counter0|divisibleby:3 %}
+                            <% if(index%3 == 0) { %>
                             <tr>
-                            {% endif %}
+                            <%  } %>
 
                             <td class="cur-act-user">
-                                {% if user.fbid %}
-                                <img src="http://graph.facebook.com/{{ user.fbid }}/picture?type=square&width=100&height=100" />
-                                {% else %}
-                                <img src="{% static 'img/blank_prof_pic.png' %}" />
-                                {% endif %}
-                                <div>{{ user.name }}</div>
+                                <% if (user.get("facebookid") != null) { %>
+                                <% var fbURLinv = "http://graph.facebook.com/" + user.get("facebookid") + "/picture?type=square&width=100&height=100"  %>
+                                <img src=<%= fbURLinv %> />
+                                <% } else { %>
+                                <img src='img/blank_prof_pic.png' />
+                                <% } %>
+                                <div><%= user.get("firstName") %> <%= user.get("lastName") %></div>
                             </td>
 
-                            {% if invited|length < 3 and forloop.counter == invited|length %}
-                                {% if invited|length == 2 %}
+                            <% if( buddyupInvited.length < 3 && index == buddyupInvited.length - 1) { %>
+                                <% if (buddyupInvited.length == 2) {  %>
                                     <td class="cur-act-user"></td>
-                                {% elif invited|length == 1%}
+                                <% } else if (buddyupInvited.length == 1) { %>
                                     <td class="cur-act-user"></td>
                                     <td class="cur-act-user"></td>
-                                {% endif %}
-                            {% endif %}
+                                <% }   %>
+                            <% } %>
 
-                            {% if forloop.counter|divisibleby:3 %}
-                            </tr>
-                            {% endif %}
-                        {% endfor %}
+                            <% if (index%3 == 2) { %>
+                                </tr>
+                            <% } %>
+                        <% }); } %>
                     </table>
                 </div>
 
@@ -135,7 +136,7 @@
 
     <footer>
         <div class="cta">
-            <a href="https://itunes.apple.com/us/app/buddyup/id867832619?ls=1&mt=8"><img class="app-store-button app-store-button-mobile" src="{% static "img/app-store-button.svg" %}"
+            <a href="https://itunes.apple.com/us/app/buddyup/id867832619?ls=1&mt=8"><img class="app-store-button app-store-button-mobile" src="img/app-store-button.svg"
                              alt="Download BuddyUp from the App Store"></a>
         </div>
         <nav class="footer-mobile">

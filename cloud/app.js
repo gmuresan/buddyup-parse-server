@@ -17,22 +17,55 @@ app.get('/hello', function(req, res) {
   res.render('hello', { creatorName: 'Congrats, you just set up your app!' });
 });
 
+var activityIconPath = {eat: "img/eat_icon_selected_new.png", drink: "img/drink_icon_selected_new.png",
+					    chill: "img/chill_icon_selected_new.png", sports:"img/sports_icon_selected_new.png",
+					    event : "img/event_icon_selected_new.png" };
+
+var GOOGLE_API_KEY = "AIzaSyDxi_YVwUKHLl5ePxDVDCoU7h_48mboXB8"
+
 app.get('/current_activity', function(req, res) {
 	var statusId = req.param('id');
 	var query = new Parse.Query("Status");
 	query.include('user');
 	query.include('location');
+	query.include("usersAttending");
+	query.include("usersInvited");
+	query.include("phoneContactsInvited");
 	query.get(statusId, {
 		success: function(status) {
 			var timeIntervalText = getTimeIntervalText(status.get("dateStarts"), status.get("dateExpires"), status.get("timeZoneOffset"));
 			var user = status.get('user');
 			var location = status.get('location');
+			var activityType = status.get('statusType');
+			if(activityType == "go out") {
+				activityTypeVal = "img/go_out_icon_selected_new.png";
+			} else {
+				var activityTypeVal = activityIconPath[activityType];
+			}
+			var usersAttendingArr = status.get("usersAttending");
+			var usersInvitedArr = status.get("usersInvited");
+			var phoneContactsInvited = status.get("phoneContactsInvited");
+			var invitedArray ;
+			console.log("asdasd"  +  usersInvitedArr);
+			if(usersInvitedArr != null && phoneContactsInvited != null) {
+				invitedArray = usersInvitedArr.concat(phoneContactsInvited);
+			} else if(usersInvitedArr == null && phoneContactsInvited != null) {
+				invitedArray = phoneContactsInvited;
+			} else {
+				invitedArray = usersInvitedArr;
+			}
+			console.log(invitedArray);
 			res.render('current_activity' , {creatorName: user.get("firstName") + " " + user.get("lastName"),
 											 facebookProfPic: "http://graph.facebook.com/" + user.get("facebookid") + "/picture?type=square&width=100&height=100",
 											 statusText: status.get("text"),
 											 timeIntervalText: timeIntervalText,
 											 locationVenue: location.get("venue"),
-											 address: location.get("address")});
+											 address: location.get("address"),
+											 activityTypeUrl: activityTypeVal,
+											 usersAttending: usersAttendingArr,
+											 mapKey: GOOGLE_API_KEY,
+											 geoPoint: location.get("geopoint"),
+											 usersInvited: invitedArray});
 
 		},
 		error: function(error) {
@@ -55,6 +88,8 @@ function getTimeIntervalText(dateStartsStr, dateExpiresStr, timeZoneOffset) {
 	var startIsTomorrow = dateIsTomorrow(copyDateStarts);
 	var endIsToday = dateIsToday(copyDateExpires);
 	var endIsTomorrow = dateIsTomorrow(copyDateExpires);
+	console.log( "start " + dateStartsTZ);
+	console.log( "expire " + dateExpiresTZ);
 
 	if(startIsToday || startIsTomorrow) {
 			//console.log("dateStarts" + dateStartsTZ)
@@ -76,7 +111,7 @@ function getTimeIntervalText(dateStartsStr, dateExpiresStr, timeZoneOffset) {
 		if(endIsTomorrow && !startIsTomorrow) {
 			endString = "Tomorrow at " + endString;
 		}
-		console.log(endString);
+		//console.log(endString);
 	} else if(dateIsBetweenTwoAndSixDaysInFuture(copyDateExpires)) {
 		if(dateIsSameDay(copyDateStarts, copyDateExpires)) {
 			endString = formatAMPM(dateExpiresTZ);
@@ -100,6 +135,9 @@ function getTimeIntervalText(dateStartsStr, dateExpiresStr, timeZoneOffset) {
 }
 
 function getDateTZ(dateStr, timeZoneOffset){
+	if(timeZoneOffset == null) {
+		timeZoneOffset = 0;
+	}
 	var dateStarts = new Date(dateStr);
 	var startSeconds = dateStarts.getTime()/1000;
 	var startSeconds = startSeconds + parseFloat(timeZoneOffset);
@@ -138,7 +176,7 @@ function dateIsBetweenTwoAndSixDaysInFuture(date) {
 }
 
 function formatAMPM(date) {
- 	console.log("date" + date);
+ //	console.log("date" + date);
   var hours = date.getHours();
   var minutes = date.getMinutes();
   var ampm = hours >= 12 ? 'PM' : 'AM';
