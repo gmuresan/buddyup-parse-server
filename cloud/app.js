@@ -31,7 +31,8 @@ app.get('/current_activity', function(req, res) {
 											 facebookProfPic: "http://graph.facebook.com/" + user.get("facebookid") + "/picture?type=square&width=100&height=100",
 											 statusText: status.get("text"),
 											 timeIntervalText: timeIntervalText,
-											 locationVenue: location.get("venue")});
+											 locationVenue: location.get("venue"),
+											 address: location.get("address")});
 
 		},
 		error: function(error) {
@@ -185,9 +186,7 @@ function getWeekMonthDayFormat(date) {
 }
 
 function dateIsSameDay(date1, date2) {  //only will work if time is 0 for both dates
-	console.log(date1);
-	console.log(date2);
-	console.log("bool value :" + (date1 == date2));
+
 	return date1.getTime() == date2.getTime();
 }
 

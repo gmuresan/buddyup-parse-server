@@ -58,9 +58,9 @@
                 <div id="cur-act-text"><%= statusText %></div>
                 <div id="cur-act-date" class="light-blue-text"><%= timeIntervalText %></div>
                 <div id="cur-act-location" class="light-blue-text">at <%= locationVenue %></div>
-                {% if status.location.address %}
-                    <div id="cur-act-address" class="light-blue-text">{{ status.location.address }}</div>
-                {% endif %}
+                <% if(address != locationVenue){ %>
+                    <div id="cur-act-address" class="light-blue-text"><%= address %></div>
+                <% } %>
                 <img id="cur-act-status-type-img" src="{{ status.getStatusTypeIconUrl }}" />
             </div>
 
