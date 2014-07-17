@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BuddyUp</title>
+    <meta name="apple-itunes-app" content="app-id=867832619"/>
+    <!-- smart app banner -->
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+    <link rel="shortcut icon" href="img/favicon.ico"/>
+    <link rel="stylesheet" type="text/css" href="css/animate.css">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,600,700,800|Leckerli+One' rel='stylesheet'
+          type='text/css'>
+    <!--script type="text/javascript"
+      src="https://maps.googleapis.com/maps/api/js?key={{ mapsKey }}&sensor=TRUE">
+    </script-->
+    <script type="text/javascript"
+        {% if debug %}
+            src="https://maps.googleapis.com/maps/api/js?sensor=TRUE">
+        {% else %}
+             src="https://maps.googleapis.com/maps/api/js?sensor=TRUE&key={{ mapsKey }}">
+        {% endif %}
+
+    </script>
+
+    <script type="text/javascript">
+      function initialize() {
+          var locationLatLng = new google.maps.LatLng({{ status.location.lat }}, {{ status.location.lng }});
+        var mapOptions = {
+          center: locationLatLng,
+          zoom: 15
+        };
+        var map = new google.maps.Map(document.getElementById("map-canvas"),
+            mapOptions);
+
+        var marker = new google.maps.Marker({
+            position: locationLatLng,
+            map: map,
+            title: '{{ status.location.venue }}'
+        });
+      }
+      google.maps.event.addDomListener(window, 'load', initialize);
+    </script>
+
+</head>
+<body>
+    <div id="cur-act">
+        <img id="cur-act-banner" src="{% static 'img/current_activity_web_banner.png' %}" />
+
+        <div id="map-canvas" style="width:100%; height:200px; top:-7px;" ></div>
+
+        <div id="cur-act-body">
+            <div id="cur-act-user-info">
+                <img id="cur-act-prof-pic" src=<%= facebookProfPic %> />
+                <div id="cur-act-name"><span><%= creatorName %><span></div>
+            </div>
+
+            <div id="cur-act-status-info">
+                <div id="cur-act-text"><%= statusText %></div>
+                <div id="cur-act-date" class="light-blue-text"><%= timeIntervalText %></div>
+                <div id="cur-act-location" class="light-blue-text">at <%= locationVenue %></div>
+                {% if status.location.address %}
+                    <div id="cur-act-address" class="light-blue-text">{{ status.location.address }}</div>
+                {% endif %}
+                <img id="cur-act-status-type-img" src="{{ status.getStatusTypeIconUrl }}" />
+            </div>
+
+            <div id="cur-act-going-invited">
+                <div id="cur-act-going" >
+                    <div class="going-invited-bar">Going</div>
+                    <table class="cur-act-users">
+                        {% for user in buddyupAttending %}
+
+                            {% if forloop.counter0|divisibleby:3 %}
+                            <tr>
+                            {% endif %}
+
+                            <td class="cur-act-user">
+                                <img src="http://graph.facebook.com/{{ user.facebookUID }}/picture?type=square&width=100&height=100" />
+                                <div>{{ user.user.first_name }} {{ user.user.last_name }}</div>
+                            </td>
+
+                            {% if buddyupAttending|length < 3 and forloop.counter == buddyupAttending|length %}
+                                {% if buddyupAttending|length == 2 %}
+                                    <td class="cur-act-user"></td>
+                                {% elif buddyupAttending|length == 1%}
+                                    <td class="cur-act-user"></td>
+                                    <td class="cur-act-user"></td>
+                                {% endif %}
+                            {% endif %}
+
+                            {% if forloop.counter|divisibleby:3 %}
+                            </tr>
+                            {% endif %}
+                        {% endfor %}
+                    </table>
+                </div>
+
+                <div id="cur-act-invited">
+                    <div class="going-invited-bar">Invited</div>
+                    <table class="cur-act-users">
+                        {% for user in invited %}
+
+                            {% if forloop.counter0|divisibleby:3 %}
+                            <tr>
+                            {% endif %}
+
+                            <td class="cur-act-user">
+                                {% if user.fbid %}
+                                <img src="http://graph.facebook.com/{{ user.fbid }}/picture?type=square&width=100&height=100" />
+                                {% else %}
+                                <img src="{% static 'img/blank_prof_pic.png' %}" />
+                                {% endif %}
+                                <div>{{ user.name }}</div>
+                            </td>
+
+                            {% if invited|length < 3 and forloop.counter == invited|length %}
+                                {% if invited|length == 2 %}
+                                    <td class="cur-act-user"></td>
+                                {% elif invited|length == 1%}
+                                    <td class="cur-act-user"></td>
+                                    <td class="cur-act-user"></td>
+                                {% endif %}
+                            {% endif %}
+
+                            {% if forloop.counter|divisibleby:3 %}
+                            </tr>
+                            {% endif %}
+                        {% endfor %}
+                    </table>
+                </div>
+
+            </div>
+
+        </div>
+
+    <footer>
+        <div class="cta">
+            <a href="https://itunes.apple.com/us/app/buddyup/id867832619?ls=1&mt=8"><img class="app-store-button app-store-button-mobile" src="{% static "img/app-store-button.svg" %}"
+                             alt="Download BuddyUp from the App Store"></a>
+        </div>
+        <nav class="footer-mobile">
+            <!--<a href="{% url 'buddyup.views.about' %}">About</a>-->
+            <a href="{% url 'buddyup.views.tos' %}">Terms of Service</a>
+            <a href="{% url 'buddyup.views.privacyPolicy' %}">Privacy Policy</a>
+            <a href="mailto:support@buddyup.im">Contact Us</a>
+            <a href="http://www.facebook.com/buddyuptheapp">Facebook</a>
+        </nav>
+    </footer>
+
+    </div>
+</body>
+</html>
