@@ -45,94 +45,98 @@
     <div id="cur-act">
         <img id="cur-act-banner" src='img/current_activity_web_banner.png'  />
 
-        <div id="map-canvas" style="width:100%; height:200px; top:-7px;" ></div>
+        <% if(!isExpired) { %>
+            <div id="map-canvas" style="width:100%; height:200px; top:-7px;" ></div>
 
-        <div id="cur-act-body">
-            <div id="cur-act-user-info">
-                <img id="cur-act-prof-pic" src=<%= facebookProfPic %> />
-                <div id="cur-act-name"><span><%= creatorName %><span></div>
-            </div>
-
-            <div id="cur-act-status-info">
-                <div id="cur-act-text"><%= statusText %></div>
-                <div id="cur-act-date" class="light-blue-text"><%= timeIntervalText %></div>
-                <div id="cur-act-location" class="light-blue-text">at <%= locationVenue %></div>
-                <% if(address != locationVenue){ %>
-                    <div id="cur-act-address" class="light-blue-text"><%= address %></div>
-                <% } %>
-                <img id="cur-act-status-type-img" src=<%= activityTypeUrl %> />
-            </div>
-
-            <div id="cur-act-going-invited">
-                <div id="cur-act-going" >
-                    <div class="going-invited-bar">Going</div>
-                    <table class="cur-act-users">
-                        <% usersAttending.forEach(function(user, index, buddyupAttending) { %>
-
-                            <% if(index%3 == 0) { %>
-                            <tr>
-                            <%  } %>
-
-                            <td class="cur-act-user">
-                                <% var fbURL = "http://graph.facebook.com/" + user.get("facebookid") + "/picture?type=square&width=100&height=100"  %>
-                                <img src=<%= fbURL %> />
-                                <div><%= user.get("firstName") %> <%= user.get("lastName") %> </div>
-                            </td>
-
-                            <% if( buddyupAttending.length < 3 && index == buddyupAttending.length - 1) { %>
-                                <% if (buddyupAttending.length == 2) {  %>
-                                    <td class="cur-act-user"></td>
-                                <% } else if (buddyupAttending.length == 1) { %>
-                                    <td class="cur-act-user"></td>
-                                    <td class="cur-act-user"></td>
-                                <% }   %>
-                            <% } %>
-
-                            <% if (index%3 == 2) { %>
-                                </tr>
-                            <% } %>
-                        <% }); %>
-                    </table>
+            <div id="cur-act-body">
+                <div id="cur-act-user-info">
+                    <img id="cur-act-prof-pic" src=<%= facebookProfPic %> />
+                    <div id="cur-act-name"><span><%= creatorName %><span></div>
                 </div>
 
-                <div id="cur-act-invited">
-                    <div class="going-invited-bar">Invited</div>
-                    <table class="cur-act-users">
-                        <% if(usersInvited != null ) { usersInvited.forEach(function(user, index, buddyupInvited) { %>
+                <div id="cur-act-status-info">
+                    <div id="cur-act-text"><%= statusText %></div>
+                    <div id="cur-act-date" class="light-blue-text"><%= timeIntervalText %></div>
+                    <div id="cur-act-location" class="light-blue-text">at <%= locationVenue %></div>
+                    <% if(address != locationVenue){ %>
+                        <div id="cur-act-address" class="light-blue-text"><%= address %></div>
+                    <% } %>
+                    <img id="cur-act-status-type-img" src=<%= activityTypeUrl %> />
+                </div>
 
-                            <% if(index%3 == 0) { %>
-                            <tr>
-                            <%  } %>
+                <div id="cur-act-going-invited">
+                    <div id="cur-act-going" >
+                        <div class="going-invited-bar">Going</div>
+                        <table class="cur-act-users">
+                            <% usersAttending.forEach(function(user, index, buddyupAttending) { %>
 
-                            <td class="cur-act-user">
-                                <% if (user.get("facebookid") != null) { %>
-                                <% var fbURLinv = "http://graph.facebook.com/" + user.get("facebookid") + "/picture?type=square&width=100&height=100"  %>
-                                <img src=<%= fbURLinv %> />
-                                <% } else { %>
-                                <img src='img/blank_prof_pic.png' />
+                                <% if(index%3 == 0) { %>
+                                <tr>
+                                <%  } %>
+
+                                <td class="cur-act-user">
+                                    <% var fbURL = "http://graph.facebook.com/" + user.get("facebookid") + "/picture?type=square&width=100&height=100"  %>
+                                    <img src=<%= fbURL %> />
+                                    <div><%= user.get("firstName") %> <%= user.get("lastName") %> </div>
+                                </td>
+
+                                <% if( buddyupAttending.length < 3 && index == buddyupAttending.length - 1) { %>
+                                    <% if (buddyupAttending.length == 2) {  %>
+                                        <td class="cur-act-user"></td>
+                                    <% } else if (buddyupAttending.length == 1) { %>
+                                        <td class="cur-act-user"></td>
+                                        <td class="cur-act-user"></td>
+                                    <% }   %>
                                 <% } %>
-                                <div><%= user.get("firstName") %> <%= user.get("lastName") %></div>
-                            </td>
 
-                            <% if( buddyupInvited.length < 3 && index == buddyupInvited.length - 1) { %>
-                                <% if (buddyupInvited.length == 2) {  %>
-                                    <td class="cur-act-user"></td>
-                                <% } else if (buddyupInvited.length == 1) { %>
-                                    <td class="cur-act-user"></td>
-                                    <td class="cur-act-user"></td>
-                                <% }   %>
-                            <% } %>
+                                <% if (index%3 == 2) { %>
+                                    </tr>
+                                <% } %>
+                            <% }); %>
+                        </table>
+                    </div>
 
-                            <% if (index%3 == 2) { %>
-                                </tr>
-                            <% } %>
-                        <% }); } %>
-                    </table>
+                    <div id="cur-act-invited">
+                        <div class="going-invited-bar">Invited</div>
+                        <table class="cur-act-users">
+                            <% if(usersInvited != null ) { usersInvited.forEach(function(user, index, buddyupInvited) { %>
+
+                                <% if(index%3 == 0) { %>
+                                <tr>
+                                <%  } %>
+
+                                <td class="cur-act-user">
+                                    <% if (user.get("facebookid") != null) { %>
+                                    <% var fbURLinv = "http://graph.facebook.com/" + user.get("facebookid") + "/picture?type=square&width=100&height=100"  %>
+                                    <img src=<%= fbURLinv %> />
+                                    <% } else { %>
+                                    <img src='img/blank_prof_pic.png' />
+                                    <% } %>
+                                    <div><%= user.get("firstName") %> <%= user.get("lastName") %></div>
+                                </td>
+
+                                <% if( buddyupInvited.length < 3 && index == buddyupInvited.length - 1) { %>
+                                    <% if (buddyupInvited.length == 2) {  %>
+                                        <td class="cur-act-user"></td>
+                                    <% } else if (buddyupInvited.length == 1) { %>
+                                        <td class="cur-act-user"></td>
+                                        <td class="cur-act-user"></td>
+                                    <% }   %>
+                                <% } %>
+
+                                <% if (index%3 == 2) { %>
+                                    </tr>
+                                <% } %>
+                            <% }); } %>
+                        </table>
+                    </div>
+
                 </div>
 
             </div>
-
-        </div>
+        <% } else { %>
+            Status Is Expired
+        <% } %>
 
     <footer>
         <div class="cta">

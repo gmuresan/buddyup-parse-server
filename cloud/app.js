@@ -46,6 +46,7 @@ app.get('/current_activity', function(req, res) {
 			var usersInvitedArr = status.get("usersInvited");
 			var phoneContactsInvited = status.get("phoneContactsInvited");
 			var invitedArray ;
+			var isExpired = checkIfExpired(status.get("dateExpires"), status.get("timeZoneOffset"));
 			console.log("asdasd"  +  usersInvitedArr);
 			if(usersInvitedArr != null && phoneContactsInvited != null) {
 				invitedArray = usersInvitedArr.concat(phoneContactsInvited);
@@ -65,7 +66,8 @@ app.get('/current_activity', function(req, res) {
 											 usersAttending: usersAttendingArr,
 											 mapKey: GOOGLE_API_KEY,
 											 geoPoint: location.get("geopoint"),
-											 usersInvited: invitedArray});
+											 usersInvited: invitedArray,
+											 isExpired: isExpired});
 
 		},
 		error: function(error) {
@@ -74,6 +76,16 @@ app.get('/current_activity', function(req, res) {
 	});
 
 });
+
+function checkIfExpired( dateExpiresStr, timeZoneOffset ) {
+	var dateExpiresTZ = getDateTZ(dateExpiresStr, timeZoneOffset);
+	var todaysDate = new Date();
+	if(dateExpiresTZ < todaysDate) {
+		console.log("date is expired");
+		return true;
+	}
+	return false;
+}
 
 function getTimeIntervalText(dateStartsStr, dateExpiresStr, timeZoneOffset) {
 
