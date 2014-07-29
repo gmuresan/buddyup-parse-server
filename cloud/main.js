@@ -195,7 +195,7 @@ Parse.Cloud.define("getNewData", function(request, response) {
       }
 
       var chatQuery = new Parse.Query("Chat");
-      chatQuery.containedIn("objectId", chatList).include("members");
+      chatQuery.containedIn("objectId", chatList).include("members").include("exMembers");
 
       chatPromise = chatQuery.find();
       return chatPromise;
@@ -208,6 +208,7 @@ Parse.Cloud.define("getNewData", function(request, response) {
     }
   ).then(
     function(chats) {
+      console.log(chats);
       newChats = chats;
       return chats;
     },
