@@ -90,6 +90,48 @@ Parse.Cloud.beforeSave("FriendRelation", function(request, response) {
 
 // });
 
+Parse.Cloud.job("testNotificationsJob", function(request, status) {
+
+  var nullStatusQuery = new Parse.Query("Notification");
+  nullStatusQuery.doesNotExist("status");
+  var statusDeletedNotificationQuery = new Parse.Query("Notification");
+  statusDeletedNotificationQuery.equalTo("type", "deletedStatus");
+
+  var statusNotDeletedQuery = new Parse.Query("Status");
+  statusNotDeletedQuery.equalTo("deleted", false);
+  var notificationsWithStatusNotDeletedQuery = new Parse.Query("Notification");
+  notificationsWithStatusNotDeletedQuery.matchesKeyInQuery("status", "objectId", statusNotDeletedQuery);
+  var notificationQuery = Parse.Query.or(nullStatusQuery, statusDeletedNotificationQuery, notificationsWithStatusNotDeletedQuery);
+  notificationQuery.equalTo("users", request.user);
+  notificationQuery.include("status").include("status.location");
+  notificationQuery.include("user");
+  notificationQuery.include("usersViewed");
+  var fiveDaysAgo = new Date((new Date()).getTime() - 60 * 60 * 24 * 5 * 1000);
+  var fiveDaysAgoQuery = new Parse.Query("Notification");
+  fiveDaysAgoQuery.greaterThanOrEqualTo("createdAt", fiveDaysAgo);
+
+  var notificationTypesNotAffectedByDate = ['requestAccepted', 'requestCanceled', 'requestSent', 'unfriended'];
+  var notificationTypesQuery = new Parse.Query("Notification");
+  notificationTypesQuery.containedIn("type", notificationTypesNotAffectedByDate);
+
+  var fiveDaysAgoOrSpecialTypeQuery = Parse.Query.or(notificationTypesQuery, fiveDaysAgoQuery);
+
+  notificationQuery.matchesKeyInQuery("objectId", "objectId", fiveDaysAgoOrSpecialTypeQuery);
+
+    notificationQuery.find().then(function(result) {
+    console.log("@@@@#EWD");
+    console.log(result);
+  });
+
+  var statusNotExpiredQuery = new Parse.Query("Notification");
+  statusNotExpiredQuery.greaterThanOrEqualTo("dateExpires", new Date());
+
+  var notExpiredOrNull = Parse.Query.or(statusNotExpiredQuery, nullStatusQuery);
+  notificationQuery.matchesKeyInQuery("objectId", "objectId", notExpiredOrNull);
+
+
+});
+
 Parse.Cloud.define("getNewData", function(request, response) {
   
   var sinceDate = request.params.since;
@@ -133,12 +175,7 @@ Parse.Cloud.define("getNewData", function(request, response) {
      var fiveDaysAgoOrSpecialTypeQuery = Parse.Query.or(notificationTypesQuery, fiveDaysAgoQuery);
 
      notificationQuery.matchesKeyInQuery("objectId", "objectId", fiveDaysAgoOrSpecialTypeQuery);
-
-     var statusNotExpiredQuery = new Parse.Query("Notification");
-     statusNotExpiredQuery.greaterThanOrEqualTo("dateExpires", new Date());
-
-     var notExpiredOrNull = Parse.Query.or(statusNotExpiredQuery, nullStatusQuery);
-     notificationQuery.matchesKeyInQuery("objectId", "objectId", notExpiredOrNull);
+     //notificationQuery.include("status");
   }
 
   promises.push(notificationQuery.find().then(function(notifications) {
@@ -148,7 +185,14 @@ Parse.Cloud.define("getNewData", function(request, response) {
       for(i=0; i<notifications.length; i++) {
         notif = notifications[i];
         status = notif.get("status");
-        if(!status || status.get("deleted") != true || notif.get("type") == "deletedStatus") {
+        //console.log("STATUS: " + status);
+        var dateExpires;
+        var todaysDate;
+        if(status) {
+          dateExpires = new Date(status.get("dateExpires"));
+          todaysDate = new Date();
+        }
+        if(!status || (status.get("deleted") != true && dateExpires.getTime() > todaysDate.getTime() ) || notif.get("type") == "deletedStatus") {
           newNotifications.push(notif);
           //users.push(notif.get("user"));
         }
