@@ -148,8 +148,7 @@ Parse.Cloud.define("getNewData", function(request, response) {
       for(i=0; i<notifications.length; i++) {
         notif = notifications[i];
         status = notif.get("status");
-        if(!status || status.get("deleted") != true) {
-          notif["text"] = "Friend Request"; 
+        if(!status || status.get("deleted") != true || notif.get("type") == "deletedStatus") {
           newNotifications.push(notif);
           //users.push(notif.get("user"));
         }
