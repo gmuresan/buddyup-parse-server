@@ -117,6 +117,7 @@ Parse.Cloud.define("getNewData", function(request, response) {
   notificationQuery.equalTo("users", request.user);
   notificationQuery.include("status").include("status.location");
   notificationQuery.include("user");
+  notificationQuery.include("usersViewed");
 
   if(sinceDate) {
     notificationQuery.greaterThanOrEqualTo("createdAt", sinceDate);
