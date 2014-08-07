@@ -78,7 +78,7 @@ app.get('/current_activity', function(req, res) {
 });
 
 function checkIfExpired( dateExpiresStr, timeZoneOffset ) {
-	var dateExpiresTZ = getDateTZ(dateExpiresStr, timeZoneOffset);
+	var dateExpiresTZ = getDateTZ(dateExpiresStr);
 	var todaysDate = new Date();
 	if(dateExpiresTZ < todaysDate) {
 		console.log("date is expired");
@@ -94,8 +94,8 @@ function getTimeIntervalText(dateStartsStr, dateExpiresStr, timeZoneOffset) {
 
 	var dateStartsTZ = getDateTZ(dateStartsStr, timeZoneOffset);
 	var dateExpiresTZ = getDateTZ(dateExpiresStr, timeZoneOffset);
-	var copyDateStarts = new Date(dateStartsTZ);
-	var copyDateExpires = new Date(dateExpiresTZ);
+	var copyDateStarts = new Date(dateStartsStr);
+	var copyDateExpires = new Date(dateExpiresStr);
 	var startIsToday = dateIsToday(copyDateStarts);
 	var startIsTomorrow = dateIsTomorrow(copyDateStarts);
 	var endIsToday = dateIsToday(copyDateExpires);
@@ -160,6 +160,8 @@ function getDateTZ(dateStr, timeZoneOffset){
 
 function dateIsToday(date) {
 	var todaysDate = new Date();
+	console.log("DATE: "+date);
+	console.log("todays date " + todaysDate);
 	if(date.setHours(0,0,0,0) == todaysDate.setHours(0,0,0,0)) {
 		return true;
 	}
