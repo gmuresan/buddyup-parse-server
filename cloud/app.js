@@ -46,7 +46,7 @@ app.get('/current_activity', function(req, res) {
 			var usersInvitedArr = status.get("usersInvited");
 			var phoneContactsInvited = status.get("phoneContactsInvited");
 			var invitedArray ;
-			var isExpired = checkIfExpired(status.get("dateExpires"), status.get("timeZoneOffset"));
+			var isExpired = checkIfExpired(status.get("dateExpires"), status.get("timeZoneOffset")) || status.get("deleted") == true;
 			console.log("asdasd"  +  usersInvitedArr);
 			if(usersInvitedArr != null && phoneContactsInvited != null) {
 				invitedArray = usersInvitedArr.concat(phoneContactsInvited);
