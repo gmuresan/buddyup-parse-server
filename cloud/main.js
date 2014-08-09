@@ -211,9 +211,7 @@ Parse.Cloud.define("getNewData", function(request, response) {
       console.log("notif");
       console.log(error);
     }
-  ).then(function(friendRelations) {
-
-  }));
+  ));
 
   // Get chats and messages
   var chatsQuery = new Parse.Query("Chat");
@@ -253,12 +251,10 @@ Parse.Cloud.define("getNewData", function(request, response) {
     }
   ).then(
     function(chats) {
-      console.log(chats);
       newChats = chats;
       return chats;
     },
     function(error) {
-      console.log("chats");
       console.log(error);
     }
   ));
