@@ -170,7 +170,7 @@ Parse.Cloud.define("getNewData", function(request, response) {
 
      var notificationTypesNotAffectedByDate = ['requestAccepted', 'requestCanceled', 'requestSent', 'unfriended'];
      var notificationTypesQuery = new Parse.Query("Notification");
-     notificationTypesQuery.containedIn("type", notificationTypesNotAffectedByDate);
+     notificationTypesQuery.containedIn("type", notificationTypesNotAffectedByDate); //this query could break notifications when loggin in since there is no limit on how many friend request statuses we get
      //notificationTypesQuery.limit("1000");
 
      var fiveDaysAgoOrSpecialTypeQuery = Parse.Query.or(notificationTypesQuery, fiveDaysAgoQuery);
