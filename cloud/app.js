@@ -1,8 +1,10 @@
 
 // These two lines are required to initialize Express in Cloud Code.
+var LOGIN_USER = "buddyupadmin";
+var LOGIN_PASSWORD = "ezpassword123";
 var express = require('express');
 var app = express();
-
+//var buddyupadmin = require('cloud/buddyupadmin');
 var parseExpressHttpsRedirect = require('parse-express-https-redirect');
 
 // Global app configuration section
@@ -10,11 +12,52 @@ app.set('views', 'cloud/views');  // Specify the folder to find templates
 app.set('view engine', 'ejs');    // Set the template engine
 app.use(express.bodyParser());    // Middleware for reading request body
 app.use(parseExpressHttpsRedirect());
+  app.use(express.cookieParser("asdf"));
+
+/******* ADMIN LOGIN ********************/
+app.get('/buddyupadmin', function(req, res) {
+	res.render('buddyupadmin', {});
+
+});
+
+app.post('/buddyuplogin', function(req, res) {
+	var user = req.body.user;
+	var password = req.body.password;
+	if(user == LOGIN_USER && password == LOGIN_PASSWORD) {
+		res.cookie('validLogin', 'yes', {signed: true, maxAge: 3600000});
+		res.redirect('analytics');
+	} else {
+		res.redirect('buddyupadmin');
+	}
+
+})
+
+app.get('/analytics', function(req, res) {
+	var session = req.signedCookies['validLogin'];
+	if(session != null && session == 'yes')
+	{
+		var query = new Parse.Query("User");
+	 	query.find().then(function(users) {
+			console.log(users.length);
+			res.render('analytics', {users: users,
+									 numUsers: users.length.toString()});
+
+	 	});
+	 }
+
+});
+
+app.post('/logout', function(req,res) {
+	res.cookie('validLogin', 'no', {signed: true, maxAge: 10000});
+	res.redirect('buddyupadmin');
+
+})
+/****************************************/
 
 // This is an example of hooking up a request handler with a specific request
 // path and HTTP verb using the Express routing API.
 app.get('/hello', function(req, res) {
-  res.render('hello', { creatorName: 'Congrats, you just set up your app!' });
+  	res.render('hello', { creatorName: 'Congrats, you just set up your app!' });
 });
 
 var activityIconPath = {eat: "img/eat_icon_selected_new.png", drink: "img/drink_icon_selected_new.png",
@@ -22,6 +65,8 @@ var activityIconPath = {eat: "img/eat_icon_selected_new.png", drink: "img/drink_
 					    event : "img/event_icon_selected_new.png" };
 
 var GOOGLE_API_KEY = "AIzaSyDxi_YVwUKHLl5ePxDVDCoU7h_48mboXB8"
+
+
 
 app.get('/current_activity', function(req, res) {
 	var statusId = req.param('id');
