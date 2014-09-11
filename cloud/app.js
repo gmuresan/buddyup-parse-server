@@ -38,9 +38,16 @@ app.get('/analytics', function(req, res) {
 	{
 		var query = new Parse.Query("User");
 	 	query.find().then(function(users) {
-			console.log(users.length);
+	 		var dateArray = new Array();
+	 		for(var i = 0; i < users.length; i++) {
+	 			var unFormattedDate = users[i].createdAt;
+	 			var tzDate = getDateTZ(unFormattedDate, -25200);
+
+	 			dateArray.push(getWeekMonthDayFormat(tzDate));
+	 		}
 			res.render('analytics', {users: users,
-									 numUsers: users.length.toString()});
+									 numUsers: users.length.toString(),
+									 tzDates: dateArray});
 
 	 	});
 	 }
