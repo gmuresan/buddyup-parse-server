@@ -1,7 +1,7 @@
 
 // These two lines are required to initialize Express in Cloud Code.
-var LOGIN_USER = "buddyupadmin";
-var LOGIN_PASSWORD = "ezpassword123";
+var LOGIN_USER = "buddyupberkeley";
+var LOGIN_PASSWORD = "RedTile2020";
 var express = require('express');
 var app = express();
 //var buddyupadmin = require('cloud/buddyupadmin');
@@ -38,6 +38,7 @@ app.get('/analytics', function(req, res) {
 	{
 		var query = new Parse.Query("User");
 	 	query.find().then(function(users) {
+	 		users.reverse();
 	 		var dateArray = new Array();
 	 		for(var i = 0; i < users.length; i++) {
 	 			var unFormattedDate = users[i].createdAt;
