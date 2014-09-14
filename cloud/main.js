@@ -282,6 +282,7 @@ Parse.Cloud.define("inviteWithTwilio", function(request, response) {
   var phoneNumberArray = request.params.phoneNumbers;
   var sendingUser = request.params.sendingUser;
   var statusUrl = request.params.statusUrl;
+  var successfullySent = 0;
   for(var i = 0; i < phoneNumberArray.length; i++)
   {
     console.log(phoneNumberArray[i]);
@@ -290,7 +291,12 @@ Parse.Cloud.define("inviteWithTwilio", function(request, response) {
       To: phoneNumberArray[i],
       Body: sendingUser + " has invited you to an activity on BuddyUp. Click here to find out more: " + statusUrl
     }, {
-      success: function(httpResponse) { response.success("SMS sent!"); },
+      success: function(httpResponse) { 
+        successfullySent++;
+        if(successfullySent == phoneNumberArray.length) {
+          response.success("SMS sent!"); 
+        } 
+    },
       error: function(httpResponse) { response.error(httpResponse); }
     });
   }
