@@ -4,6 +4,10 @@
             "applicationId": "aDavC8Nu9uAgALH5t81G4We7CHoW4Nx1b95Yce5t", 
             "masterKey": "ITcsg8L9K3Pi4Oe0NlA7RZgvAVlZlPeETJt6dGpI"
         }, 
+        "Buddyup-Live": {
+            "applicationId": "sbVmh4oc9iqjbkPQCgu1kOv41iLRLRmg6FvO6ny1", 
+            "masterKey": "JClfb1vUch1V2Q5odxfgjsl3U9ZzLsgwzpEwmCcB"
+        }, 
         "_default": {
             "link": "BuddyUp"
         }
