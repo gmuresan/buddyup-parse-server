@@ -319,6 +319,7 @@ Parse.Cloud.job("updateSuggestedFriends", function(request, status) {
   var oldSuggestedFriendsQuery = new Parse.Query("FriendRelation");
   oldSuggestedFriendsQuery.limit(1000);
   oldSuggestedFriendsQuery.find().then(function(suggestedFriends) {
+    console.log("suggested Friends" + suggestedFriends.length)
     for(var i = 0; i < suggestedFriends.length; i++) {
       var score = suggestedFriends[i].get("suggestedFriendScore");
       var newScore = score*DAILY_COMPOUND_RATE;
@@ -332,6 +333,7 @@ Parse.Cloud.job("updateSuggestedFriends", function(request, status) {
   }).then(function(lastUpdatedDate) {
     dateSinceUpdate = lastUpdatedDate;
     var query = new Parse.Query("Status");
+    query.limit(1000);
     query.include("usersAttending");
     query.include("usersInvited");
     if(dateSinceUpdate != null)
@@ -352,10 +354,13 @@ Parse.Cloud.job("updateSuggestedFriends", function(request, status) {
         var attendingFriendQuery1 = new Parse.Query("FriendRelation");
         attendingFriendQuery1.equalTo("toUser", status.get("user"));
         attendingFriendQuery1.containedIn("fromUser", status.get("usersAttending"));
+        attendingFriendQuery1.limit(1000);
         var attendingFriendQuery2 = new Parse.Query("FriendRelation");
         attendingFriendQuery2.equalTo("fromUser", status.get("user"));
         attendingFriendQuery2.containedIn("toUser", status.get("usersAttending"));
+        attendingFriendQuery2.limit(1000);
         var attendingFriendQuery = new Parse.Query.or(attendingFriendQuery1, attendingFriendQuery2);
+        attendingFriendQuery.limit(1000);
         return attendingFriendQuery.find();
 
       }).then(function(attendingFriendRelation) {
@@ -371,10 +376,15 @@ Parse.Cloud.job("updateSuggestedFriends", function(request, status) {
         var invitedFriendQuery1 = new Parse.Query("FriendRelation");
         invitedFriendQuery1.equalTo("toUser", status.get("user"));
         invitedFriendQuery1.containedIn("fromUser", status.get("usersInvited"));
+        invitedFriendQuery1.limit(1000);
+
         var invitedFriendQuery2 = new Parse.Query("FriendRelation");
         invitedFriendQuery2.equalTo("fromUser", status.get("user"));
         invitedFriendQuery2.containedIn("toUser", status.get("usersInvited"));
+        invitedFriendQuery2.limit(1000);
+
         var invitedFriendQuery = new Parse.Query.or(invitedFriendQuery1, invitedFriendQuery2);
+        invitedFriendQuery.limit(1000);
         return invitedFriendQuery.find();
 
       }).then(function(invitedFriendRelation) {
@@ -387,6 +397,7 @@ Parse.Cloud.job("updateSuggestedFriends", function(request, status) {
       }).then(function() {
         var statusMessageQuery = new Parse.Query("StatusMessage");
         statusMessageQuery.equalTo("status", status);
+        statusMessageQuery.limit(1000);
         return statusMessageQuery.find();
       }).then(function(statusMessages) {
 
@@ -396,10 +407,14 @@ Parse.Cloud.job("updateSuggestedFriends", function(request, status) {
             var messageUserQuery1 = new Parse.Query("FriendRelation");
             messageUserQuery1.equalTo("toUser", statusMessage.get("user"));
             messageUserQuery1.equalTo("fromUser", status.get("user"));
+            messageUserQuery1.limit(1000);
+
             var messageUserQuery2 = new Parse.Query("FriendRelation");
             messageUserQuery2.equalTo("fromUser", statusMessage.get("user"));
             messageUserQuery2.equalTo("toUser", status.get("user"));
+            messageUserQuery2.limit(1000);
             var messageUserQuery = new Parse.Query.or(messageUserQuery1, messageUserQuery2);
+            messageUserQuery.limit(1000);
             return messageUserQuery.find();
           }).then(function(statusMessageUsers) {
             //console.log(statusMessageUsers.length);
@@ -418,6 +433,7 @@ Parse.Cloud.job("updateSuggestedFriends", function(request, status) {
   }).then(function() {
     var chatQuery = new Parse.Query("Chat");
     chatQuery.include("members");
+    chatQuery.limit(1000);
     return chatQuery.find();
   }).then(function(chats){
     //console.log(chats);
@@ -428,6 +444,7 @@ Parse.Cloud.job("updateSuggestedFriends", function(request, status) {
         //console.log(chat.get("members"));
         var chatMessageQuery = new Parse.Query("ChatMessage");
         chatMessageQuery.equalTo("chat", chat);
+        chatMessageQuery.limit(1000);
         if(dateSinceUpdate != null)
         {
           chatMessageQuery.greaterThanOrEqualTo("createdAt", dateSinceUpdate.get("lastUpdate"));
@@ -442,10 +459,13 @@ Parse.Cloud.job("updateSuggestedFriends", function(request, status) {
             var chatFriendRelationQuery1 = new Parse.Query("FriendRelation");
             chatFriendRelationQuery1.equalTo("toUser", creator);
             chatFriendRelationQuery1.containedIn("fromUser", members);
+            chatFriendRelationQuery1.limit(1000);
             var chatFriendRelationQuery2 = new Parse.Query("FriendRelation");
             chatFriendRelationQuery2.equalTo("fromUser", creator);
             chatFriendRelationQuery2.containedIn("toUser", members);
+            chatFriendRelationQuery2.limit(1000);
             var chatFriendRelationQuery = new Parse.Query.or(chatFriendRelationQuery1, chatFriendRelationQuery2);
+            chatFriendRelationQuery.limit(1000);
             return chatFriendRelationQuery.find();
           }).then(function(chatFriends) {
             //console.log(chatFriends.length);
@@ -457,6 +477,7 @@ Parse.Cloud.job("updateSuggestedFriends", function(request, status) {
             var creator = chatMessage.get("user");
             var members = chat.get("members");
             var passiveMemberQuery = new Parse.Query("FriendRelation");
+            passiveMemberQuery.limit(1000);
             passiveMemberQuery.containedIn("toUser", members);
             passiveMemberQuery.notEqualTo("toUser", creator);
             passiveMemberQuery.containedIn("fromUser", members);
@@ -544,18 +565,18 @@ Parse.Cloud.job("updateInstallationUserName", function(request, status) {
       } else {
         status.error("Installations userNames update FAILED");
       }
-    })
+    });
 
   });
 
 });
 
-Parse.Cloud.job("CountFriends", fuction(request, status) {
+Parse.Cloud.job("CountFriends", function(request, status) {
   Parse.Cloud.useMasterKey();
 
   var query = new Parse.Query(Parse.User);
   query.limit(1000);
   query.find().then(function(users) {
     
-  })
+  });
 });
