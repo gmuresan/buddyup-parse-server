@@ -317,6 +317,7 @@ Parse.Cloud.job("updateSuggestedFriends", function(request, status) {
   Parse.Cloud.useMasterKey();
 
   var oldSuggestedFriendsQuery = new Parse.Query("FriendRelation");
+  oldSuggestedFriendsQuery.limit(1000);
   oldSuggestedFriendsQuery.find().then(function(suggestedFriends) {
     for(var i = 0; i < suggestedFriends.length; i++) {
       var score = suggestedFriends[i].get("suggestedFriendScore");
