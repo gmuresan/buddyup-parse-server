@@ -36,7 +36,10 @@ app.get('/analytics', function(req, res) {
 	var session = req.signedCookies['validLogin'];
 	if(session != null && session == 'yes')
 	{
-		var query = new Parse.Query("User");
+		var query = new Parse.Query(Parse.User);
+		query.addAscending("createdAt");
+		query.limit(1000);
+
 	 	query.find().then(function(users) {
 	 		users.reverse();
 	 		var dateArray = new Array();
