@@ -513,3 +513,49 @@ Parse.Cloud.job("resetSuggestedScore", function(request, status) {
     status.success("scores are reset");
   });
 });
+
+
+Parse.Cloud.job("updateInstallationUserName", function(request, status) {
+
+  Parse.Cloud.useMasterKey();
+  var query = new Parse.Query(Parse.Installation);
+  query.limit(1000);
+  query.doesNotExist("userName");
+  query.exists("user");
+  query.include("user");
+  query.find().then(function(installations) {
+
+    var toSave = [];
+
+    for(var i=0; i<installations.length; i++) {
+      var installation = installations[i];
+      var user = installation.get("user");
+      if(!user) {
+        continue;
+      }
+
+      installation.set("userName", user.get("searchName"));
+      toSave.push(installation);
+    }
+
+    Parse.Object.saveAll(toSave).then(function(success) {
+      if(success) {
+        status.success("Installations updated with userNames");
+      } else {
+        status.error("Installations userNames update FAILED");
+      }
+    })
+
+  });
+
+});
+
+Parse.Cloud.job("CountFriends", fuction(request, status) {
+  Parse.Cloud.useMasterKey();
+
+  var query = new Parse.Query(Parse.User);
+  query.limit(1000);
+  query.find().then(function(users) {
+    
+  })
+});
