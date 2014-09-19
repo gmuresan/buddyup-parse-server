@@ -317,15 +317,20 @@ Parse.Cloud.job("updateSuggestedFriends", function(request, status) {
   Parse.Cloud.useMasterKey();
 
   var oldSuggestedFriendsQuery = new Parse.Query("FriendRelation");
-  oldSuggestedFriendsQuery.limit(1000);
-  oldSuggestedFriendsQuery.find().then(function(suggestedFriends) {
-    console.log("suggested Friends" + suggestedFriends.length)
-    for(var i = 0; i < suggestedFriends.length; i++) {
-      var score = suggestedFriends[i].get("suggestedFriendScore");
-      var newScore = score*DAILY_COMPOUND_RATE;
-      suggestedFriends[i].set("suggestedFriendScore", newScore);
-    }
-    return Parse.Object.saveAll(suggestedFriends);
+  //oldSuggestedFriendsQuery.limit(1000);
+  console.log("test");
+  var toSave = new Array();
+  oldSuggestedFriendsQuery.each(function(suggestedFriend) {
+    var score = suggestedFriend.get("suggestedFriendScore");
+    var newScore = score*DAILY_COMPOUND_RATE;
+    suggestedFriend.set("suggestedFriendScore", newScore);
+    toSave.push(suggestedFriend);
+    console.log("Suggested " + suggestedFriend);
+    return toSave;
+  }).then(function() {
+    console.log("Tosave" + toSave);
+    console.log("Size " + toSave.length);
+    return Parse.Object.saveAll(toSave);
   }).then(function() {
     var query = new Parse.Query("SuggestedFriendsRunDate");
     var dateSinceUpdate;
@@ -431,7 +436,7 @@ Parse.Cloud.job("updateSuggestedFriends", function(request, status) {
     });
     return promise;
   }).then(function() {
-    var chatQuery = new Parse.Query("Chat");
+    var chatQuery = new Parse.Query("Chat"); //add date limit
     chatQuery.include("members");
     chatQuery.limit(1000);
     return chatQuery.find();
