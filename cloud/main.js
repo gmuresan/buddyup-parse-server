@@ -245,9 +245,13 @@ Parse.Cloud.define("getNewData", function(request, response) {
       }
 
       var chatQuery = new Parse.Query("Chat");
-      chatQuery.containedIn("objectId", chatList).include("members").include("exMembers").include("viewedMembers");
+      chatQuery.containedIn("objectId", chatList);//.include("members").include("exMembers").include("viewedMembers");
+      var chatQueryNeedUpdate = new Parse.Query("Chat");
+      chatQueryNeedUpdate.greaterThanOrEqualTo("needsUpdate", sinceDate);
+      var finalChatQuery =  new Parse.Query.or(chatQuery, chatQueryNeedUpdate);
+      finalChatQuery.include("members").include("exMembers").include("viewedMembers");
 
-      chatPromise = chatQuery.find();
+      chatPromise = finalChatQuery.find();
       return chatPromise;
 
     },
@@ -259,6 +263,7 @@ Parse.Cloud.define("getNewData", function(request, response) {
   ).then(
     function(chats) {
       newChats = chats;
+      console.log("new chats" + newChats.length);
       return chats;
     },
     function(error) {
